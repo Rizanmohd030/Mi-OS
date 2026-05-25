@@ -9,6 +9,7 @@ import ProjectCard from "@/components/dashboard/ProjectCard";
 import CalendarButton from "@/components/dashboard/CalendarButton";
 import CalendarModal from "@/components/dashboard/CalendarModal";
 import QuickTask from "@/components/dashboard/QuickTask";
+import AnimatedList from "@/components/ui/AnimatedList";
 import { useWorkspaceStore } from "@/lib/store";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
 
@@ -32,8 +33,6 @@ export default function Home() {
   const [newTaskText, setNewTaskText] = useState("");
   const [newProjTitle, setNewProjTitle] = useState("");
   const [newProjDesc, setNewProjDesc] = useState("");
-  const [newProjDeadline, setNewProjDeadline] = useState("");
-  const [newProjStatus, setNewProjStatus] = useState<"current" | "hold" | "completed">("current");
 
   if (!hasHydrated) {
     return (
@@ -84,16 +83,14 @@ export default function Home() {
       slug,
       title: newProjTitle.trim(),
       description: newProjDesc.trim() || "No description provided.",
-      status: newProjStatus,
+      status: "current",
       pinned: false,
-      deadline: newProjDeadline || null,
+      deadline: null,
     });
 
     // Reset fields
     setNewProjTitle("");
     setNewProjDesc("");
-    setNewProjDeadline("");
-    setNewProjStatus("current");
     setIsAddProjectOpen(false);
   };
 
@@ -105,107 +102,112 @@ export default function Home() {
   });
 
   return (
-    <DashboardLayout>
-      <div>
-        {/* Top Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-4xl font-light tracking-tight text-slate-100 sm:text-5xl">
-              Rizan's Workspace
-            </h1>
-            <p className="mt-2.5 text-[15px] font-light text-slate-500">
-              Personal operating system & project registry
-            </p>
-          </div>
+    <>
+      {/* Fixed Calendar Button - Top Right */}
+      <div className="fixed top-6 right-6 z-50">
+        <CalendarButton onClick={() => setIsCalendarOpen(true)} />
+      </div>
 
-          <div className="flex items-center gap-3">
+      <DashboardLayout>
+        {/* Centered Title Header */}
+        <div className="flex flex-col items-center justify-center mb-20">
+          <h1 className="text-5xl sm:text-6xl font-light tracking-tight text-gray-900 text-center">
+            Resume Workspace
+          </h1>
+          <p className="mt-4 text-base font-light text-[#6A89A7] text-center">
+            Personal operating system & project registry
+          </p>
+        </div>
+
+        {/* Reset Button - Top Left Below Title */}
+          <div className="flex justify-center mb-12">
             <button
               onClick={resetToDefault}
               className="
-                rounded-xl border border-white/[0.04]
-                bg-white/[0.02] p-3 text-slate-400
-                transition-all duration-300 hover:bg-white/[0.06] hover:text-slate-200
+                rounded-xl border border-[#BDDDFC]
+                bg-white p-3 text-[#6A89A7]
+                transition-all duration-300 hover:bg-[#BDDDFC] hover:text-[#384959]
               "
               title="Reset to default demo data"
             >
               <RotateCcw size={18} />
             </button>
-            
-            <CalendarButton onClick={() => setIsCalendarOpen(true)} />
-          </div>
-        </div>
-
-        {/* Project Section */}
-        <div className="mt-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-light tracking-wide text-slate-400 uppercase">
-              Projects
-            </h2>
-
-            <button
-              onClick={() => setIsAddProjectOpen(true)}
-              className="
-                flex items-center gap-2 rounded-xl
-                bg-white/5 border border-white/[0.04] px-4 py-2
-                text-xs font-light tracking-wider text-slate-300 uppercase
-                transition-all duration-300 hover:bg-white/10 hover:text-white
-              "
-            >
-              <Plus size={14} />
-              New Project
-            </button>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {sortedProjects.map((project) => (
-                <motion.div
-                  key={project.slug}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ProjectCard project={project} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
+          {/* Project Section */}
+          <div className="mb-20">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-lg font-light tracking-wide text-[#6A89A7] uppercase">
+                Projects
+              </h2>
 
-        {/* Quick Tasks Section */}
-        <div className="mt-20">
-          <h2 className="text-lg font-light tracking-wide text-slate-400 uppercase mb-6">
+              <button
+                onClick={() => setIsAddProjectOpen(true)}
+                className="
+                  flex items-center gap-2 rounded-xl
+                  bg-[#88BDF2] border border-[#88BDF2] px-4 py-2
+                  text-xs font-light tracking-wider text-white uppercase
+                  transition-all duration-300 hover:bg-[#6A89A7] hover:border-[#6A89A7]
+                "
+              >
+                <Plus size={14} />
+                New Project
+              </button>
+            </div>
+
+            {/* Cards Grid - Full Width Spread */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full">
+              <AnimatePresence mode="popLayout">
+                {sortedProjects.map((project, idx) => (
+                  <motion.div
+                    key={project.slug}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ProjectCard project={project} colorIndex={idx} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Quick Tasks Section - Full Width */}
+          <div className="mt-20">
+          <h2 className="text-lg font-light tracking-wide text-[#6A89A7] uppercase mb-6">
             Quick Tasks
           </h2>
 
-          <div className="max-w-xl">
-            {/* Inline Tasks List */}
-            <div className="space-y-1 mb-4">
-              <AnimatePresence mode="popLayout">
-                {quickTasks.map((task) => (
-                  <QuickTask
-                    key={task.id}
-                    text={task.text}
-                    completed={task.completed}
-                    onToggle={() => toggleQuickTask(task.id)}
-                    onDelete={() => deleteQuickTask(task.id)}
-                  />
-                ))}
-              </AnimatePresence>
-              
-              {quickTasks.length === 0 && (
-                <p className="text-sm font-light text-slate-500 py-4 italic">
-                  No tasks for today. Add one below to get started.
-                </p>
-              )}
-            </div>
+          <div className="max-w-2xl rounded-2xl bg-white border-2 border-[#BDDDFC] shadow-sm p-6">
+            {/* Animated List with Tasks */}
+            {quickTasks.length > 0 ? (
+              <div className="mb-6">
+                <AnimatedList
+                  items={quickTasks.map(task => task.text)}
+                  onItemSelect={(item, index) => {
+                    const task = quickTasks[index];
+                    if (task) {
+                      toggleQuickTask(task.id);
+                    }
+                  }}
+                  showGradients={false}
+                  enableArrowNavigation={true}
+                  displayScrollbar={true}
+                  className="w-full"
+                  itemClassName="bg-white hover:bg-blue-50"
+                />
+              </div>
+            ) : (
+              <p className="text-sm font-light text-[#6A89A7] py-4 italic mb-4">
+                No tasks for today. Add one below to get started.
+              </p>
+            )}
 
             {/* Inline Task Add Form */}
-            <form onSubmit={handleAddTask} className="flex items-center gap-3 mt-4">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-700 bg-transparent text-slate-500">
+            <form onSubmit={handleAddTask} className="flex items-center gap-3 border-t border-[#BDDDFC] pt-4">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-[#88BDF2] bg-transparent text-[#88BDF2]">
                 <Plus size={10} />
               </div>
               <input
@@ -214,15 +216,31 @@ export default function Home() {
                 onChange={(e) => setNewTaskText(e.target.value)}
                 placeholder="Add a task..."
                 className="
-                  flex-1 bg-transparent border-0 border-b border-transparent py-1 text-sm font-light
-                  text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-slate-800
+                  flex-1 bg-transparent border-0 text-sm font-light
+                  text-gray-900 placeholder:text-[#6A89A7] focus:outline-none
                   transition-all duration-300
                 "
               />
             </form>
+
+            {/* Delete task buttons */}
+            {quickTasks.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {quickTasks.map((task) => (
+                  <button
+                    key={task.id}
+                    onClick={() => deleteQuickTask(task.id)}
+                    className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                    title="Delete task"
+                  >
+                    ✕ {task.text}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </DashboardLayout>
 
       {/* Calendar System Modal */}
       <CalendarModal
@@ -240,7 +258,7 @@ export default function Home() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddProjectOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             />
 
             {/* Form Panel */}
@@ -251,17 +269,17 @@ export default function Home() {
               transition={{ type: "spring", duration: 0.4 }}
               className="
                 relative z-10 w-full max-w-md rounded-2xl
-                border border-white/[0.06] bg-[#0E121A] p-7 shadow-2xl
+                border-2 border-[#BDDDFC] bg-white p-7 shadow-lg
               "
             >
-              <h3 className="text-xl font-light text-slate-200 mb-6">
+              <h3 className="text-xl font-light text-gray-900 mb-6">
                 Create New Project
               </h3>
 
               <form onSubmit={handleCreateProject} className="space-y-5">
                 <div>
-                  <label className="block text-xs font-light text-slate-500 uppercase tracking-wider mb-2">
-                    Title
+                  <label className="block text-xs font-light text-[#6A89A7] uppercase tracking-wider mb-2">
+                    Project Name
                   </label>
                   <input
                     type="text"
@@ -270,16 +288,16 @@ export default function Home() {
                     onChange={(e) => setNewProjTitle(e.target.value)}
                     placeholder="e.g. AI ERP"
                     className="
-                      w-full rounded-lg border border-white/[0.06] bg-white/[0.02]
-                      px-4 py-2.5 text-sm font-light text-slate-200 placeholder:text-slate-600
-                      focus:outline-none focus:border-slate-700 focus:bg-white/[0.03] transition-all
+                      w-full rounded-lg border border-[#BDDDFC] bg-blue-50
+                      px-4 py-2.5 text-sm font-light text-gray-900 placeholder:text-[#6A89A7]
+                      focus:outline-none focus:border-[#88BDF2] focus:bg-white transition-all
                     "
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-light text-slate-500 uppercase tracking-wider mb-2">
-                    Description
+                  <label className="block text-xs font-light text-[#6A89A7] uppercase tracking-wider mb-2">
+                    Description <span className="text-gray-400">(Optional)</span>
                   </label>
                   <textarea
                     rows={3}
@@ -287,48 +305,11 @@ export default function Home() {
                     onChange={(e) => setNewProjDesc(e.target.value)}
                     placeholder="Briefly describe the focus of this project..."
                     className="
-                      w-full rounded-lg border border-white/[0.06] bg-white/[0.02]
-                      px-4 py-2.5 text-sm font-light text-slate-200 placeholder:text-slate-600
-                      focus:outline-none focus:border-slate-700 focus:bg-white/[0.03] transition-all resize-none
+                      w-full rounded-lg border border-[#BDDDFC] bg-blue-50
+                      px-4 py-2.5 text-sm font-light text-gray-900 placeholder:text-[#6A89A7]
+                      focus:outline-none focus:border-[#88BDF2] focus:bg-white transition-all resize-none
                     "
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-light text-slate-500 uppercase tracking-wider mb-2">
-                      Deadline
-                    </label>
-                    <input
-                      type="date"
-                      value={newProjDeadline}
-                      onChange={(e) => setNewProjDeadline(e.target.value)}
-                      className="
-                        w-full rounded-lg border border-white/[0.06] bg-white/[0.02]
-                        px-3 py-2.5 text-sm font-light text-slate-300
-                        focus:outline-none focus:border-slate-700 transition-all
-                      "
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-light text-slate-500 uppercase tracking-wider mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={newProjStatus}
-                      onChange={(e) => setNewProjStatus(e.target.value as any)}
-                      className="
-                        w-full rounded-lg border border-white/[0.06] bg-[#0E121A]
-                        px-3 py-2.5 text-sm font-light text-slate-300
-                        focus:outline-none focus:border-slate-700 transition-all
-                      "
-                    >
-                      <option value="current">Current</option>
-                      <option value="hold">On Hold</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
@@ -336,8 +317,8 @@ export default function Home() {
                     type="button"
                     onClick={() => setIsAddProjectOpen(false)}
                     className="
-                      rounded-xl px-4 py-2.5 text-xs font-light tracking-wide text-slate-400
-                      hover:text-slate-200 transition-all
+                      rounded-xl px-4 py-2.5 text-xs font-light tracking-wide text-[#6A89A7]
+                      hover:text-[#384959] hover:bg-[#BDDDFC] transition-all
                     "
                   >
                     Cancel
@@ -345,8 +326,8 @@ export default function Home() {
                   <button
                     type="submit"
                     className="
-                      rounded-xl bg-white text-slate-900 px-5 py-2.5 text-xs font-medium tracking-wide
-                      hover:bg-slate-200 transition-all
+                      rounded-xl bg-[#88BDF2] text-white px-5 py-2.5 text-xs font-medium tracking-wide
+                      hover:bg-[#6A89A7] transition-all
                     "
                   >
                     Create
@@ -357,6 +338,6 @@ export default function Home() {
           </div>
         )}
       </AnimatePresence>
-    </DashboardLayout>
+    </>
   );
 }

@@ -56,6 +56,11 @@ export interface WorkspaceResource {
   createdAt: string;
 }
 
+export interface MoodEntry {
+  date: string; // YYYY-MM-DD
+  mood: string; // emoji
+}
+
 export interface ProjectWorkspace {
   tasks: WorkspaceTask[];
   notes: WorkspaceNote[];
@@ -68,6 +73,7 @@ interface WorkspaceState {
   projects: Project[];
   quickTasks: QuickTask[];
   workspaces: Record<string, ProjectWorkspace>;
+  moodEntries: MoodEntry[];
   
   // Project Actions
   addProject: (project: Omit<Project, "createdAt">) => void;
@@ -100,6 +106,10 @@ interface WorkspaceState {
   addWorkspaceResource: (slug: string, title: string, url: string, description: string) => void;
   updateWorkspaceResource: (slug: string, id: string, updates: Partial<Omit<WorkspaceResource, "id" | "createdAt">>) => void;
   deleteWorkspaceResource: (slug: string, id: string) => void;
+
+  // Mood Actions
+  addMoodEntry: (date: string, mood: string) => void;
+  deleteMoodEntry: (date: string) => void;
 
   // Reset Data helper
   resetToDefault: () => void;
@@ -259,6 +269,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       projects: initialProjects,
       quickTasks: initialQuickTasks,
       workspaces: initialWorkspaces,
+      moodEntries: [],
 
       // Project Actions
       addProject: (project) =>
@@ -505,11 +516,31 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return { workspaces: updatedWorkspaces };
         }),
 
+      // Mood Actions
+      addMoodEntry: (date, mood) =>
+        set((state) => {
+          const existingIndex = state.moodEntries.findIndex(m => m.date === date);
+          if (existingIndex >= 0) {
+            const updated = [...state.moodEntries];
+            updated[existingIndex] = { date, mood };
+            return { moodEntries: updated };
+          }
+          return {
+            moodEntries: [...state.moodEntries, { date, mood }],
+          };
+        }),
+
+      deleteMoodEntry: (date) =>
+        set((state) => ({
+          moodEntries: state.moodEntries.filter(m => m.date !== date),
+        })),
+
       resetToDefault: () =>
         set(() => ({
           projects: initialProjects,
           quickTasks: initialQuickTasks,
           workspaces: initialWorkspaces,
+          moodEntries: [],
         })),
     }),
     {

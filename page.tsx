@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { useWorkspaceStore } from "@/lib/store";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
-import { useMouseDrawStrikethrough } from "@/hooks/useMouseDrawStrikethrough";
 import Link from "next/link";
 
 export default function WorkspacePage({
@@ -143,51 +142,41 @@ export default function WorkspacePage({
           {/* Task List */}
           {tasks.length > 0 ? (
             <div className="mb-8 space-y-3">
-              {tasks.map((task) => {
-                const { elementRef, handlers, isDrawing } = useMouseDrawStrikethrough(() => 
-                  handleToggleTask(task.id)
-                );
-
-                return (
-                  <motion.div
-                    ref={elementRef}
-                    key={task.id}
-                    layout
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    {...handlers}
-                    className={`flex items-center justify-between group p-4 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-[#BDDDFC] ${
-                      isDrawing ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1 cursor-text select-none">
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                        className="w-5 h-5 rounded border-[#BDDDFC] text-[#88BDF2] cursor-pointer flex-shrink-0"
-                      />
-                      <span
-                        className={`font-light transition-all ${
-                          task.completed
-                            ? "text-gray-400 line-through"
-                            : "text-gray-900"
-                        }`}
-                      >
-                        {task.text}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all flex-shrink-0"
-                      title="Delete task"
+              {tasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="flex items-center justify-between group p-4 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-[#BDDDFC]"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={() => handleToggleTask(task.id)}
+                      className="w-5 h-5 rounded border-[#BDDDFC] text-[#88BDF2] cursor-pointer"
+                    />
+                    <span
+                      className={`font-light transition-all ${
+                        task.completed
+                          ? "text-gray-400 line-through"
+                          : "text-gray-900"
+                      }`}
                     >
-                      ✕
-                    </button>
-                  </motion.div>
-                );
-              })}
+                      {task.text}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+                    title="Delete task"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
+              ))}
             </div>
           ) : (
             <p className="text-sm font-light text-[#6A89A7] italic py-8">
