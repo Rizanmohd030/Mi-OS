@@ -1,68 +1,116 @@
-import {Pin} from "lucide-react";
+"use client";
+
+import { Pin } from "lucide-react";
 import Link from "next/link";
+import { Project, useWorkspaceStore } from "@/lib/store";
+import { formatDistanceToNow, parseISO } from "date-fns";
 
 type ProjectCardProps = {
-    title: string;
-    description: string;
-    pinned?: boolean;
-     slug: string;       
+  project: Project;
 };
 
-export default function ProjectCard({
-    title,description,slug,pinned = false,}: ProjectCardProps){
-       return (
-  <Link
-  href={`/workspace/${slug}`}
-    className="
-      group relative overflow-hidden rounded-none
-      border border-white/10
-      bg-gradient-to-br from-[#1A2333] to-[#111827]
-      p-7
-      transition-all duration-300
-      hover:-translate-y-1.5
-      hover:border-white/20
-      hover:shadow-2xl
-    "
-  >
-    <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
-    </div>
+export default function ProjectCard({ project }: ProjectCardProps) {
+  const { togglePinProject } = useWorkspaceStore();
+  const { title, description, slug, pinned, status, deadline } = project;
 
-    <div className="relative z-10 flex h-full flex-col justify-between">
-      <div className="flex items-start justify-between">
+  const handlePinClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    togglePinProject(slug);
+  };
+
+  // Human readable deadline countdown
+  let deadlineText = "";
+  let isOverdue = false;
+  if (deadline) {
+    try {
+      const deadlineDate = parseISO(deadline);
+      const now = new Date();
+      if (deadlineDate < now) {
+        deadlineText = "Overdue";
+        isOverdue = true;
+      } else {
+        const distance = formatDistanceToNow(deadlineDate);
+        deadlineText = `${distance} remaining`;
+      }
+    } catch {
+      deadlineText = deadline;
+    }
+  }
+
+  // Soft styling for statuses
+  const statusStyles = {
+    current: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+    hold: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    completed: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+  };
+
+  const statusLabels = {
+    current: "Current",
+    hold: "On Hold",
+    completed: "Completed",
+  };
+
+  return (
+    <Link
+      href={`/Workspace/${slug}`}
+      className="
+        group relative block rounded-2xl
+        border border-white/[0.04]
+        bg-white/[0.01] p-6
+        transition-all duration-300 ease-out
+        hover:bg-white/[0.02]
+        hover:border-white/[0.08]
+        hover:-translate-y-1
+      "
+    >
+      <div className="flex flex-col h-full justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            {title}
-          </h2>
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-xl font-medium tracking-tight text-slate-200 group-hover:text-white transition-colors duration-300">
+              {title}
+            </h2>
 
-          <p className="mt-3 max-w-[220px] text-sm leading-6 text-white/60">
+            <button
+              onClick={handlePinClick}
+              className={`
+                rounded-full p-1.5 transition-all duration-300
+                hover:bg-white/10
+                ${pinned ? "text-slate-300" : "text-slate-600 opacity-0 group-hover:opacity-100"}
+              `}
+              title={pinned ? "Unpin project" : "Pin project"}
+            >
+              <Pin size={14} className={pinned ? "fill-slate-300" : ""} />
+            </button>
+          </div>
+
+          <p className="mt-2 text-sm leading-relaxed text-slate-400 font-light line-clamp-3">
             {description}
           </p>
         </div>
 
-        {pinned && (
-          <div className="rounded-full bg-white/10 p-2 text-white/70">
-            <Pin size={16} />
-          </div>
-        )}
-      </div>
-
-      <div className="mt-10">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-white/50">
-            Current
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.03]">
+          <span
+            className={`
+              rounded-full border px-2.5 py-0.5 text-xs font-light tracking-wide
+              ${statusStyles[status] || statusStyles.current}
+            `}
+          >
+            {statusLabels[status] || status}
           </span>
 
-          <span className="text-sm text-cyan-300">
-            Active
-          </span>
-        </div>
-
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full w-[60%] rounded-full bg-cyan-400" />
+          {deadline && (
+            <div className="text-right">
+              <p className="text-[11px] text-slate-500 font-light uppercase tracking-wider">
+                Deadline
+              </p>
+              <p className={`text-xs font-light ${isOverdue ? "text-red-400" : "text-slate-400"}`}>
+                {deadlineText}
+              </p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  </Link>
-);
-}
+    </Link>
+  );
+}
