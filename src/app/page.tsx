@@ -23,6 +23,7 @@ export default function Home() {
     <ProjectCard
       title="React Mastery"
       description="Frontend learning and architecture"
+      pinned
     />
 
     <ProjectCard
