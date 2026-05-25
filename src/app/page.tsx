@@ -1,15 +1,17 @@
-export default function Home(){
-  return(
-    <main className="min-h-screen bg-[#0B0F19] text-white">
-      <div className="p-10">
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+
+export default function Home() {
+  return (
+    <DashboardLayout>
+      <div>
         <h1 className="text-5xl font-bold tracking-tight">
           Rizan's Workspace
         </h1>
 
-        <p className="mt-3 text-white/60 text-lg">
+        <p className="mt-3 text-lg text-white/60">
           Personal project operating system
         </p>
       </div>
-    </main>
-  )
+    </DashboardLayout>
+  );
 }
