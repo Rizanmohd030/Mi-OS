@@ -1,15 +1,18 @@
 import {Pin} from "lucide-react";
+import Link from "next/link";
 
 type ProjectCardProps = {
     title: string;
     description: string;
-    pinned?: boolean;       
+    pinned?: boolean;
+     slug: string;       
 };
 
 export default function ProjectCard({
-    title,description,pinned = false,}: ProjectCardProps){
+    title,description,slug,pinned = false,}: ProjectCardProps){
        return (
-  <div
+  <Link
+  href={`/workspace/${slug}`}
     className="
       group relative overflow-hidden rounded-none
       border border-white/10
@@ -60,6 +63,6 @@ export default function ProjectCard({
         </div>
       </div>
     </div>
-  </div>
+  </Link>
 );
 }
