@@ -1,6 +1,6 @@
-@host = http://localhost:5211
+@MiOS.API_HostAddress = http://localhost:5047
 
-GET {{host}}/weatherforecast/
+GET {{MiOS.API_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

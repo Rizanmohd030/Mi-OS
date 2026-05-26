@@ -10,7 +10,7 @@ public class Project
 
     public string Status { get; set; } = "current";
 
-    public bool Pinned { get; set; } = false;
+    public bool Pinned { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 }
