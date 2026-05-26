@@ -103,51 +103,41 @@ export default function Home() {
 
   return (
     <>
-      {/* Fixed Calendar Button - Top Right */}
-      <div className="fixed top-6 right-6 z-50">
-        <CalendarButton onClick={() => setIsCalendarOpen(true)} />
+      {/* Navbar - Static (scrolls with content) */}
+      <div className="bg-[#faf9f9] border-b border-[#E5E4E2] shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4 sm:px-10">
+          <div className="text-base font-medium text-[#333333] uppercase tracking-wide">
+            Mi-OS
+          </div>
+           <CalendarButton onClick={() => setIsCalendarOpen(true)} />
+        </div>
       </div>
 
       <DashboardLayout>
         {/* Centered Title Header */}
         <div className="flex flex-col items-center justify-center mb-20">
-          <h1 className="text-5xl sm:text-6xl font-light tracking-tight text-gray-900 text-center">
-            Resume Workspace
+          <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight text-[#333333] text-center" style={{letterSpacing: '-0.02em'}}>
+            Productivity Workspace
           </h1>
-          <p className="mt-4 text-base font-light text-[#6A89A7] text-center">
-            Personal operating system & project registry
+          <p className="mt-4 text-base font-normal text-[#888888] text-center">
+            Digital sanctuary for organized minds
           </p>
         </div>
 
-        {/* Reset Button - Top Left Below Title */}
-          <div className="flex justify-center mb-12">
-            <button
-              onClick={resetToDefault}
-              className="
-                rounded-xl border border-[#BDDDFC]
-                bg-white p-3 text-[#6A89A7]
-                transition-all duration-300 hover:bg-[#BDDDFC] hover:text-[#384959]
-              "
-              title="Reset to default demo data"
-            >
-              <RotateCcw size={18} />
-            </button>
-          </div>
-
-          {/* Project Section */}
-          <div className="mb-20">
-            <div className="flex items-center justify-between mb-10">
-              <h2 className="text-lg font-light tracking-wide text-[#6A89A7] uppercase">
-                Projects
-              </h2>
+        {/* Project Section */}
+        <div className="mb-20">
+          <div className="flex items-center justify-between mb-10">
+            <h2 className="text-sm font-semibold tracking-widest text-[#333333] uppercase" style={{letterSpacing: '0.05em'}}>
+              Projects
+            </h2>
 
               <button
                 onClick={() => setIsAddProjectOpen(true)}
                 className="
-                  flex items-center gap-2 rounded-xl
-                  bg-[#88BDF2] border border-[#88BDF2] px-4 py-2
-                  text-xs font-light tracking-wider text-white uppercase
-                  transition-all duration-300 hover:bg-[#6A89A7] hover:border-[#6A89A7]
+                  flex items-center gap-2 rounded-lg
+                  bg-[#0058be] border border-[#0058be] px-4 py-2
+                  text-xs font-medium tracking-wider text-white uppercase
+                  transition-all duration-200 hover:bg-[#003d8a]
                 "
               >
                 <Plus size={14} />
@@ -174,77 +164,130 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Quick Tasks Section - Full Width */}
+          {/* Quick Tasks Section */}
           <div className="mt-20">
-          <h2 className="text-lg font-light tracking-wide text-[#6A89A7] uppercase mb-6">
-            Quick Tasks
-          </h2>
+            <h2 className="text-sm font-semibold tracking-widest text-[#333333] uppercase mb-8">
+              Quick Tasks
+            </h2>
 
-          <div className="max-w-2xl rounded-2xl bg-white border-2 border-[#BDDDFC] shadow-sm p-6">
-            {/* Animated List with Tasks */}
-            {quickTasks.length > 0 ? (
-              <div className="mb-6">
-                <AnimatedList
-                  items={quickTasks.map(task => task.text)}
-                  onItemSelect={(item, index) => {
-                    const task = quickTasks[index];
-                    if (task) {
-                      toggleQuickTask(task.id);
+            <div className="space-y-8">
+              {quickTasks.length > 0 ? (
+                (() => {
+                  // Group tasks by date
+                  const groupedByDate = quickTasks.reduce((acc, task) => {
+                    const date = new Date(task.createdAt);
+                    const dateKey = date.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).toUpperCase();
+                    
+                    if (!acc[dateKey]) {
+                      acc[dateKey] = [];
                     }
-                  }}
-                  showGradients={false}
-                  enableArrowNavigation={true}
-                  displayScrollbar={true}
-                  className="w-full"
-                  itemClassName="bg-white hover:bg-blue-50"
-                />
-              </div>
-            ) : (
-              <p className="text-sm font-light text-[#6A89A7] py-4 italic mb-4">
-                No tasks for today. Add one below to get started.
-              </p>
-            )}
+                    acc[dateKey].push(task);
+                    return acc;
+                  }, {} as Record<string, typeof quickTasks>);
 
-            {/* Inline Task Add Form */}
-            <form onSubmit={handleAddTask} className="flex items-center gap-3 border-t border-[#BDDDFC] pt-4">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full border border-[#88BDF2] bg-transparent text-[#88BDF2]">
-                <Plus size={10} />
-              </div>
+                  return Object.entries(groupedByDate).map(([dateKey, tasksForDate]) => (
+                    <div key={dateKey} className="mb-8">
+                      <h3 className="text-xs font-normal text-[#888888] uppercase tracking-wider mb-4">
+                        {dateKey}
+                      </h3>
+                      <div className="space-y-3">
+                        {tasksForDate.map((task) => (
+                          <div
+                            key={task.id}
+                            className="
+                              bg-white rounded-md px-4 py-3
+                              flex items-center gap-4 group
+                              border border-[#E5E4E2]
+                              hover:border-[#c4c7c7]
+                              transition-all duration-200
+                            "
+                          >
+                            <button
+                              onClick={() => toggleQuickTask(task.id)}
+                              className="
+                                flex-shrink-0 rounded-sm
+                                flex items-center justify-center
+                                w-5 h-5
+                                transition-all duration-200
+                              "
+                            >
+                              {task.completed ? (
+                                <div className="w-5 h-5 bg-[#333333] rounded-sm flex items-center justify-center border border-[#333333]">
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-sm border-1.5 border-[#E5E4E2] hover:border-[#c4c7c7]" />
+                              )}
+                            </button>
+                            
+                            <span
+                              className={`
+                                text-[15px] transition-all duration-200 flex-1
+                                ${
+                                  task.completed
+                                    ? "text-[#888888] line-through opacity-50"
+                                    : "text-[#333333]"
+                                }
+                              `}
+                            >
+                              {task.text}
+                            </span>
+
+                            <button
+                              onClick={() => deleteQuickTask(task.id)}
+                              className="
+                                flex-shrink-0 opacity-0 group-hover:opacity-100
+                                transition-opacity duration-200
+                                text-[#888888] hover:text-red-500
+                                text-xs
+                              "
+                              title="Delete task"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()
+              ) : (
+                <p className="text-sm text-[#888888] py-4">
+                  No tasks yet. Add one below to get started.
+                </p>
+              )}
+            </div>
+
+            {/* Add Task Form */}
+            <form
+              onSubmit={handleAddTask}
+              className="mt-8 flex items-center gap-4 pt-6 border-t border-[#E5E4E2]"
+            >
+              <Plus size={18} className="text-[#0058be]" />
               <input
                 type="text"
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 placeholder="Add a task..."
                 className="
-                  flex-1 bg-transparent border-0 text-sm font-light
-                  text-gray-900 placeholder:text-[#6A89A7] focus:outline-none
-                  transition-all duration-300
+                  flex-1 bg-transparent border-0 text-[15px]
+                  text-[#333333] placeholder:text-[#c4c7c7]
+                  focus:outline-none transition-all duration-200
                 "
               />
             </form>
-
-            {/* Delete task buttons */}
-            {quickTasks.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {quickTasks.map((task) => (
-                  <button
-                    key={task.id}
-                    onClick={() => deleteQuickTask(task.id)}
-                    className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                    title="Delete task"
-                  >
-                    ✕ {task.text}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-      </DashboardLayout>
+        </DashboardLayout>
 
-      {/* Calendar System Modal */}
-      <CalendarModal
-        open={isCalendarOpen}
+        {/* Calendar System Modal */}
+        <CalendarModal
+          open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
       />
 
