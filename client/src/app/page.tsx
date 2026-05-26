@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import React from "react";
+import { useRef } from "react";
 import { Plus, Settings, RotateCcw, CalendarDays } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -10,13 +12,31 @@ import CalendarButton from "@/components/dashboard/CalendarButton";
 import CalendarModal from "@/components/dashboard/CalendarModal";
 import QuickTask from "@/components/dashboard/QuickTask";
 import AnimatedList from "@/components/ui/AnimatedList";
+import ProfileDropdown from "@/components/ui/ProfileDropdown";
 import { useWorkspaceStore } from "@/lib/store";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
 
 export default function Home() {
   const hasHydrated = useHasHydrated();
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside for profile dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Zustand Store
   const { 
@@ -33,6 +53,8 @@ export default function Home() {
   const [newTaskText, setNewTaskText] = useState("");
   const [newProjTitle, setNewProjTitle] = useState("");
   const [newProjDesc, setNewProjDesc] = useState("");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
 
   if (!hasHydrated) {
     return (
@@ -106,10 +128,41 @@ export default function Home() {
       {/* Navbar - Static (scrolls with content) */}
       <div className="bg-[#faf9f9] border-b border-[#E5E4E2] shadow-sm">
         <div className="flex items-center justify-between px-6 py-4 sm:px-10">
-          <div className="text-base font-medium text-[#333333] uppercase tracking-wide">
-            Mi-OS
+          {/* Mi-OS Button with Dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="text-base font-medium text-[#333333] uppercase tracking-wide hover:text-[#88BDF2] transition-colors"
+            >
+              Mi-OS
+            </button>
+
+            {/* Dropdown */}
+            <AnimatePresence>
+              {isProfileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 top-full z-50 mt-3 w-64 overflow-hidden rounded-2xl border border-[#E5E4E2] bg-white shadow-xl"
+                >
+                  <div className="p-4">
+                    <p className="text-sm font-semibold text-[#333333]">
+                      Rizan
+                    </p>
+                    <p className="mt-1 text-xs text-[#888888]">
+                      rizan@example.com
+                    </p>
+                    <p className="mt-1 text-xs text-[#888888]">
+                      logout
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-           <CalendarButton onClick={() => setIsCalendarOpen(true)} />
+          <CalendarButton onClick={() => setIsCalendarOpen(true)} />
         </div>
       </div>
 
@@ -131,37 +184,69 @@ export default function Home() {
               Projects
             </h2>
 
-              <button
-                onClick={() => setIsAddProjectOpen(true)}
-                className="
-                  flex items-center gap-2 rounded-lg
-                  bg-[#0058be] border border-[#0058be] px-4 py-2
-                  text-xs font-medium tracking-wider text-white uppercase
-                  transition-all duration-200 hover:bg-[#003d8a]
-                "
-              >
-                <Plus size={14} />
-                New Project
-              </button>
+              
             </div>
 
             {/* Cards Grid - Full Width Spread */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full">
-              <AnimatePresence mode="popLayout">
-                {sortedProjects.map((project, idx) => (
-                  <motion.div
-                    key={project.slug}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ProjectCard project={project} colorIndex={idx} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full">
+  <AnimatePresence mode="popLayout">
+    {sortedProjects.map((project, idx) => (
+      <motion.div
+        key={project.slug}
+        layout
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+      >
+        <ProjectCard project={project} colorIndex={idx} />
+      </motion.div>
+    ))}
+
+    {/* Add Project Card */}
+    <motion.button
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      onClick={() => setIsAddProjectOpen(true)}
+      className="
+        group
+        min-h-[260px]
+        rounded-2xl
+        border-2 border-dashed border-[#E5E4E2]
+        bg-white/40
+        flex items-center justify-center
+        transition-all duration-300
+        hover:border-[#88BDF2]
+        hover:bg-[#88BDF2]/5
+        hover:shadow-lg
+      "
+    >
+      <div
+        className="
+          flex h-16 w-16 items-center justify-center
+          rounded-2xl
+          bg-white
+          shadow-md
+          transition-all duration-300
+          group-hover:scale-110
+          group-hover:bg-[#88BDF2]
+        "
+      >
+        <Plus
+          size={28}
+          className="
+            text-[#888888]
+            transition-colors duration-300
+            group-hover:text-white
+          "
+        />
+      </div>
+    </motion.button>
+  </AnimatePresence>
+</div>
           </div>
 
           {/* Quick Tasks Section */}
