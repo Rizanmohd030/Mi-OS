@@ -15,6 +15,7 @@ import AnimatedList from "@/components/ui/AnimatedList";
 import ProfileDropdown from "@/components/ui/ProfileDropdown";
 import { useWorkspaceStore } from "@/lib/store";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
+import { createProject, getProjects , getProjectBySlug} from "@/lib/api/projects";
 
 export default function Home() {
   const hasHydrated = useHasHydrated();
@@ -38,11 +39,23 @@ export default function Home() {
     };
   }, []);
 
+  React.useEffect(() => {
+  const fetchProjects = async () => {
+   
+    try {
+      const data = await getProjects();
+      setBackendProjects(data);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    }
+  };
+
+  fetchProjects();
+}, []);
+
   // Zustand Store
-  const { 
-    projects, 
+  const {
     quickTasks, 
-    addProject, 
     addQuickTask, 
     toggleQuickTask, 
     deleteQuickTask,
@@ -55,6 +68,7 @@ export default function Home() {
   const [newProjDesc, setNewProjDesc] = useState("");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [backendProjects, setBackendProjects] = useState<any[]>([]);
 
   if (!hasHydrated) {
     return (
@@ -84,8 +98,9 @@ export default function Home() {
     setNewTaskText("");
   };
 
-  const handleCreateProject = (e: React.FormEvent) => {
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!newProjTitle.trim()) return;
     
     const slug = newProjTitle
@@ -96,32 +111,37 @@ export default function Home() {
       .replace(/^-+|-+$/g, "");
 
     // Avoid duplicate slugs
-    if (projects.some((p) => p.slug === slug)) {
+    if (backendProjects.some((p) => p.slug === slug)) {
       alert("A project with a similar title already exists.");
       return;
     }
 
-    addProject({
+    const created = await createProject({
       slug,
       title: newProjTitle.trim(),
-      description: newProjDesc.trim() || "No description provided.",
-      status: "current",
-      pinned: false,
-      deadline: null,
+   description: newProjDesc.trim() || "No description provided.",
+   status: "current",
+   pinned: false,
+   
     });
 
     // Reset fields
     setNewProjTitle("");
     setNewProjDesc("");
     setIsAddProjectOpen(false);
+    setBackendProjects((prev) => [created, ...prev]);
   };
 
   // Sort projects: Pinned first, then by date created
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const sortedProjects = [...backendProjects].sort((a, b) => {
+  if (a.pinned && !b.pinned) return -1;
+  if (!a.pinned && b.pinned) return 1;
+
+  return (
+    new Date(b.createdAt).getTime() -
+    new Date(a.createdAt).getTime()
+  );
+});
 
   return (
     <>
@@ -192,7 +212,7 @@ export default function Home() {
   <AnimatePresence mode="popLayout">
     {sortedProjects.map((project, idx) => (
       <motion.div
-        key={project.slug}
+        key={project.id}
         layout
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

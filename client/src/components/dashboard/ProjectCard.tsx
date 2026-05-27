@@ -1,5 +1,5 @@
 "use client";
-
+import { togglePinProject } from "@/lib/api/projects";
 import { Pin } from "lucide-react";
 import Link from "next/link";
 import { Project, useWorkspaceStore } from "@/lib/store";
@@ -20,15 +20,24 @@ const PASTEL_COLORS = [
 ];
 
 export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProps) {
-  const { togglePinProject } = useWorkspaceStore();
+  
   const { title, description, slug, pinned, status, deadline } = project;
   const color = PASTEL_COLORS[colorIndex % PASTEL_COLORS.length];
 
-  const handlePinClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    togglePinProject(slug);
-  };
+ const handlePinClick = async (
+  e: React.MouseEvent
+) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  try {
+    await togglePinProject(project.id);
+
+    window.location.reload();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   // Human readable deadline countdown
   let deadlineText = "";

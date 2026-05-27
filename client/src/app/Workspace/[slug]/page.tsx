@@ -1,24 +1,38 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
+
+import {
+  getTasks,
+  createTask,
+} from "@/lib/api/tasks";
+
+import {
+  getProjectBySlug,
+  getProjects,
+} from "@/lib/api/projects";
+
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+
+import {
+  motion,
+  AnimatePresence,
+} from "framer-motion";
 
 import {
   Menu,
-  ChevronLeft,
   Plus,
 } from "lucide-react";
 
-import { useWorkspaceStore } from "@/lib/store";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
 
 type WorkspaceTaskItemProps = {
   task: {
-    id: string;
+    id: number;
     text: string;
     completed: boolean;
   };
+
   onToggle: () => void;
 };
 
@@ -29,8 +43,14 @@ function WorkspaceTaskItem({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{
+        opacity: 0,
+        y: 10,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
       className="
         flex items-center justify-between
         border-b border-[#E5E4E2]
@@ -52,12 +72,20 @@ function WorkspaceTaskItem({
         >
           {task.completed ? (
             <div className="w-5 h-5 bg-[#333333] rounded-sm flex items-center justify-center border border-[#333333]">
-              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 text-white"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           ) : (
-            <div className="w-5 h-5 rounded-sm border-1.5 border-[#E5E4E2] hover:border-[#c4c7c7]" />
+            <div className="w-5 h-5 rounded-sm border border-[#E5E4E2] hover:border-[#c4c7c7]" />
           )}
         </button>
 
@@ -85,72 +113,109 @@ export default function WorkspacePage({
 }) {
   const { slug } = use(params);
 
-  const hasHydrated = useHasHydrated();
-
-  const {
-    projects,
-    workspaces,
-    addWorkspaceTask,
-    toggleWorkspaceTask,
-  } = useWorkspaceStore();
+  const hasHydrated =
+    useHasHydrated();
 
   const [newTaskText, setNewTaskText] =
     useState("");
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
+
+  const [project, setProject] =
+    useState<any>(null);
+
+  const [projects, setProjects] =
+    useState<any[]>([]);
+
+  const [tasks, setTasks] =
+    useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [
+          projectData,
+          projectsData,
+        ] = await Promise.all([
+          getProjectBySlug(slug),
+          getProjects(),
+        ]);
+
+        const tasksData =
+          await getTasks(slug);
+
+        setProject(projectData);
+
+        setProjects(projectsData);
+
+        setTasks(tasksData);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchData();
+  }, [slug]);
 
   if (!hasHydrated) return null;
-
-  const project = projects.find(
-    (p) => p.slug === slug
-  );
 
   if (!project) {
     return (
       <div className="p-10">
-        Project not found
+        Loading...
       </div>
     );
   }
 
-  const workspace = workspaces[slug];
-
-  const tasks = workspace?.tasks || [];
-
   const today = new Date();
 
   const formattedDate =
-    today.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
+    today.toLocaleDateString(
+      "en-US",
+      {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }
+    );
 
-  const handleAddTask = (
+  const handleAddTask = async (
     e: React.FormEvent
   ) => {
     e.preventDefault();
 
     if (!newTaskText.trim()) return;
 
-    addWorkspaceTask(
-      slug,
-      newTaskText.trim()
-    );
+    try {
+      const createdTask =
+        await createTask({
+          projectSlug: slug,
+          text: newTaskText.trim(),
+          completed: false,
+        });
 
-    setNewTaskText("");
+      setTasks((prev) => [
+        createdTask,
+        ...prev,
+      ]);
+
+      setNewTaskText("");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <div className="relative h-screen bg-[#faf9f9] text-[#333333] overflow-hidden">
-      {/* SIDEBAR OVERLAY */}
+      {/* SIDEBAR */}
       <motion.aside
         animate={{
           x: sidebarOpen ? 0 : -240,
         }}
         transition={{
           duration: 0.4,
-          ease: "easeInOut"
+          ease: "easeInOut",
         }}
         className="
           fixed left-0 top-0 h-screen w-60
@@ -162,7 +227,6 @@ export default function WorkspacePage({
           shadow-lg
         "
       >
-        {/* SIDEBAR HEADER - Mi-OS + Hamburger */}
         <div className="px-4 py-5 border-b border-[#E5E4E2] flex items-center justify-between">
           <Link
             href="/"
@@ -176,14 +240,16 @@ export default function WorkspacePage({
           >
             Mi-OS
           </Link>
+
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() =>
+              setSidebarOpen(false)
+            }
             className="
               rounded-md p-2
               transition-all duration-200
               hover:bg-[#E5E4E2]/50
             "
-            aria-label="Close sidebar"
           >
             <Menu
               size={20}
@@ -192,17 +258,18 @@ export default function WorkspacePage({
           </button>
         </div>
 
-        {/* PROJECTS LIST */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
-            {projects.map((item) => {
-              const active = item.slug === slug;
+            {projects.map(
+              (item: any) => {
+                const active =
+                  item.slug === slug;
 
-              return (
-                <Link
-                  key={item.slug}
-                  href={`/Workspace/${item.slug}`}
-                  className={`
+                return (
+                  <Link
+                    key={item.slug}
+                    href={`/Workspace/${item.slug}`}
+                    className={`
                     flex items-center gap-3
                     rounded-md px-3 py-2
                     text-sm
@@ -213,24 +280,31 @@ export default function WorkspacePage({
                         : "text-[#444748] hover:bg-[#E5E4E2]/50"
                     }
                   `}
-                >
-                  <span>{item.title}</span>
-                </Link>
-              );
-            })}
+                  >
+                    <span>
+                      {item.title}
+                    </span>
+                  </Link>
+                );
+              }
+            )}
           </div>
         </div>
       </motion.aside>
 
-      {/* BACKDROP OVERLAY */}
+      {/* OVERLAY */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setSidebarOpen(false)}
+            transition={{
+              duration: 0.3,
+            }}
+            onClick={() =>
+              setSidebarOpen(false)
+            }
             className="fixed inset-0 bg-black/20 z-40"
           />
         )}
@@ -238,7 +312,7 @@ export default function WorkspacePage({
 
       {/* MAIN */}
       <main className="h-screen w-full flex flex-col overflow-hidden">
-        {/* HEADER - Simple with Mi-OS centered */}
+        {/* HEADER */}
         <div
           className="
             border-b border-[#E5E4E2]
@@ -246,10 +320,11 @@ export default function WorkspacePage({
             flex items-center justify-between
           "
         >
-          {/* Hamburger Button */}
           <button
             onClick={() =>
-              setSidebarOpen(!sidebarOpen)
+              setSidebarOpen(
+                !sidebarOpen
+              )
             }
             className="
               rounded-md p-2
@@ -257,7 +332,6 @@ export default function WorkspacePage({
               hover:bg-[#E5E4E2]/50
               -ml-2
             "
-            aria-label="Toggle sidebar"
           >
             <Menu
               size={24}
@@ -265,21 +339,19 @@ export default function WorkspacePage({
             />
           </button>
 
-          {/* Centered Mi-OS */}
           <div className="flex-1 flex justify-center">
             <span className="text-base font-medium text-[#333333] uppercase tracking-wide">
               Mi-OS
             </span>
           </div>
 
-          {/* Spacer to balance layout */}
           <div className="w-10" />
         </div>
 
         {/* CONTENT */}
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full">
-            {/* PROJECT TITLE */}
+            {/* TITLE */}
             <div className="px-10 pt-12 pb-8">
               <h1
                 className="
@@ -287,7 +359,10 @@ export default function WorkspacePage({
                   tracking-tight
                   text-[#333333]
                 "
-                style={{letterSpacing: '-0.01em'}}
+                style={{
+                  letterSpacing:
+                    "-0.01em",
+                }}
               >
                 {project.title}
               </h1>
@@ -308,12 +383,7 @@ export default function WorkspacePage({
                 <WorkspaceTaskItem
                   key={task.id}
                   task={task}
-                  onToggle={() =>
-                    toggleWorkspaceTask(
-                      slug,
-                      task.id
-                    )
-                  }
+                  onToggle={() => {}}
                 />
               ))
             ) : (
@@ -324,17 +394,17 @@ export default function WorkspacePage({
 
             {/* EMPTY LINES */}
             <div className="px-6">
-              {Array.from({ length: 12 }).map(
-                (_, i) => (
-                  <div
-                    key={i}
-                    className="
-                      h-[58px]
-                      border-b border-[#E5E4E2]
-                    "
-                  />
-                )
-              )}
+              {Array.from({
+                length: 12,
+              }).map((_, i) => (
+                <div
+                  key={i}
+                  className="
+                    h-[58px]
+                    border-b border-[#E5E4E2]
+                  "
+                />
+              ))}
             </div>
           </div>
         </div>

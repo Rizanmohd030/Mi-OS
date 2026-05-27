@@ -29,11 +29,40 @@ public class ProjectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Project>> CreateProject(Project project)
     {
-        project.Id = Guid.NewGuid();
-
         project.CreatedAt = DateTime.UtcNow;
 
         _context.Projects.Add(project);
+
+        await _context.SaveChangesAsync();
+
+        return Ok(project);
+    }
+
+    [HttpGet("{slug}")]
+    public async Task<ActionResult<Project>> GetProjectBySlug(string slug)
+    {
+        var project = await _context.Projects
+       .FirstOrDefaultAsync(p => p.Slug == slug);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(project);
+    }
+
+    [HttpPatch("{id}/pin")]
+    public async Task<ActionResult> TogglePin(long id)
+    {
+        var project = await _context.Projects.FindAsync(id);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        project.Pinned = !project.Pinned;
 
         await _context.SaveChangesAsync();
 

@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Project> Projects => Set<Project>();
+    public DbSet<TaskItem> Tasks { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
@@ -35,8 +37,31 @@ public class AppDbContext : DbContext
 
         entity.Property(p => p.CreatedAt)
             .HasColumnName("created_at");
+
+        entity.Property(p => p.Slug)
+            .HasColumnName("slug");    
     });
+    modelBuilder.Entity<TaskItem>(entity =>
+{
+    entity.ToTable("tasks");
+
+    entity.Property(t => t.Id)
+        .HasColumnName("id");
+
+    entity.Property(t => t.ProjectSlug)
+        .HasColumnName("project_slug");
+
+    entity.Property(t => t.Text)
+        .HasColumnName("text");
+
+    entity.Property(t => t.Completed)
+        .HasColumnName("completed");
+
+    entity.Property(t => t.CreatedAt)
+        .HasColumnName("created_at");
+});
 
     base.OnModelCreating(modelBuilder);
 }
+
 }
