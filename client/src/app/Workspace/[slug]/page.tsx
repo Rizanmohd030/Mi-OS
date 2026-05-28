@@ -3,9 +3,11 @@
 import { use, useEffect, useState } from "react";
 
 import {
-  getTasks,
-  createTask,
-} from "@/lib/api/tasks";
+  getProjectTasks,
+  createProjectTask,
+  toggleProjectTask,
+  deleteProjectTask,
+} from "@/lib/api/projectTasks";
 
 import {
   getProjectBySlug,
@@ -34,11 +36,15 @@ type WorkspaceTaskItemProps = {
   };
 
   onToggle: () => void;
+  onDelete: () => void;
+  isBusy: boolean;
 };
 
 function WorkspaceTaskItem({
   task,
   onToggle,
+  onDelete,
+  isBusy,
 }: WorkspaceTaskItemProps) {
   return (
     <motion.div
@@ -52,7 +58,7 @@ function WorkspaceTaskItem({
         y: 0,
       }}
       className="
-        flex items-center justify-between
+        group flex items-center justify-between
         border-b border-[#E5E4E2]
         bg-[#faf9f9]
         px-6 py-4
@@ -63,11 +69,13 @@ function WorkspaceTaskItem({
       <div className="flex items-center gap-4">
         <button
           onClick={onToggle}
+          disabled={isBusy}
           className="
             transition-all duration-200
             rounded-sm
             flex items-center justify-center
             w-5 h-5
+            disabled:opacity-60
           "
         >
           {task.completed ? (
@@ -102,9 +110,33 @@ function WorkspaceTaskItem({
           {task.text}
         </p>
       </div>
+
+      <button
+        onClick={onDelete}
+        disabled={isBusy}
+        className="
+          flex-shrink-0 opacity-0
+          group-hover:opacity-100
+          transition-opacity duration-200
+          text-[#888888] hover:text-red-500
+          text-xs
+          disabled:opacity-60
+        "
+        title="Delete task"
+      >
+        ✕
+      </button>
     </motion.div>
   );
 }
+
+type TaskItem = {
+  id: number;
+  projectId: number;
+  text: string;
+  completed: boolean;
+  createdAt: string;
+};
 
 export default function WorkspacePage({
   params,
@@ -129,7 +161,9 @@ export default function WorkspacePage({
     useState<any[]>([]);
 
   const [tasks, setTasks] =
-    useState<any[]>([]);
+    useState<TaskItem[]>([]);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,7 +177,7 @@ export default function WorkspacePage({
         ]);
 
         const tasksData =
-          await getTasks(slug);
+          await getProjectTasks(projectData.id);
 
         setProject(projectData);
 
@@ -187,22 +221,103 @@ export default function WorkspacePage({
 
     if (!newTaskText.trim()) return;
 
+    const text = newTaskText.trim();
+    const optimisticId = Date.now();
+    setIsCreatingTask(true);
+    setTasks((prev) => [
+      {
+        id: optimisticId,
+        projectId: project.id,
+        text,
+        completed: false,
+        createdAt: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+    setNewTaskText("");
+
     try {
       const createdTask =
-        await createTask({
-          projectSlug: slug,
-          text: newTaskText.trim(),
+        await createProjectTask(project.id, {
+          text,
           completed: false,
         });
 
       setTasks((prev) => [
         createdTask,
-        ...prev,
+        ...prev.filter((task) => task.id !== optimisticId),
       ]);
-
-      setNewTaskText("");
     } catch (error) {
       console.error(error);
+      setTasks((prev) =>
+        prev.filter((task) => task.id !== optimisticId)
+      );
+      setNewTaskText(text);
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleToggleTask = async (
+    id: number
+  ) => {
+    setActiveTaskId(id);
+    let previousTasks: TaskItem[] =
+      [];
+
+    setTasks((prev) => {
+      previousTasks = prev;
+
+      return prev.map((task) =>
+        task.id === id
+          ? {
+              ...task,
+              completed: !task.completed,
+            }
+          : task
+      );
+    });
+
+    try {
+      const updatedTask =
+        await toggleProjectTask(id);
+
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === id
+            ? updatedTask
+            : task
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setTasks(previousTasks);
+    } finally {
+      setActiveTaskId(null);
+    }
+  };
+
+  const handleDeleteTask = async (
+    id: number
+  ) => {
+    setActiveTaskId(id);
+    let previousTasks: TaskItem[] =
+      [];
+
+    setTasks((prev) => {
+      previousTasks = prev;
+      return prev.filter(
+        (task) => task.id !== id
+      );
+    });
+
+    try {
+      await deleteProjectTask(id);
+    } catch (error) {
+      console.error(error);
+      setTasks(previousTasks);
+    } finally {
+      setActiveTaskId(null);
     }
   };
 
@@ -383,7 +498,17 @@ export default function WorkspacePage({
                 <WorkspaceTaskItem
                   key={task.id}
                   task={task}
-                  onToggle={() => {}}
+                  isBusy={activeTaskId === task.id}
+                  onToggle={() =>
+                    handleToggleTask(
+                      task.id
+                    )
+                  }
+                  onDelete={() =>
+                    handleDeleteTask(
+                      task.id
+                    )
+                  }
                 />
               ))
             ) : (
@@ -436,12 +561,18 @@ export default function WorkspacePage({
                   e.target.value
                 )
               }
-              placeholder="Add a task"
+              placeholder={
+                isCreatingTask
+                  ? "Adding task..."
+                  : "Add a task"
+              }
+              disabled={isCreatingTask}
               className="
                 w-full bg-transparent
                 text-[15px] text-[#333333]
                 placeholder:text-[#c4c7c7]
                 focus:outline-none
+                disabled:opacity-60
               "
             />
           </form>

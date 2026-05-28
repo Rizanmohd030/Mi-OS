@@ -8,6 +8,7 @@ import { useWorkspaceStore } from "@/lib/store";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
 import Link from "next/link";
+import { togglePinProject } from "@/lib/api/projects";  
 
 export default function WorkspacePage({
   params,
@@ -21,7 +22,6 @@ export default function WorkspacePage({
   const {
     projects,
     workspaces,
-    togglePinProject,
     addWorkspaceTask,
     toggleWorkspaceTask,
     deleteWorkspaceTask,
@@ -73,6 +73,11 @@ export default function WorkspacePage({
     deleteWorkspaceTask(slug, taskId);
   };
 
+  const handleTogglePin = async () => {
+    await togglePinProject(project.id);
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Soft background accent */}
@@ -98,7 +103,7 @@ export default function WorkspacePage({
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => togglePinProject(slug)}
+              onClick={handleTogglePin}
               className={`p-2 rounded-lg transition-colors ${
                 project.pinned
                   ? "bg-[#88BDF2] text-white"

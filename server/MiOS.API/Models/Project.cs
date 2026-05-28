@@ -14,4 +14,6 @@ public class Project
 
     public DateTime CreatedAt { get; set; }
     public string Slug { get; set; } = string.Empty;
+
+    public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 }

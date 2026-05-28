@@ -17,13 +17,10 @@ public class TasksController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("{slug}")]
-    public async Task<ActionResult<IEnumerable<TaskItem>>> GetTasks(
-        string slug
-    )
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<TaskItem>>> GetTasks()
     {
         var tasks = await _context.Tasks
-            .Where(t => t.ProjectSlug == slug)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
@@ -31,10 +28,18 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TaskItem>> CreateTask(
-        TaskItem task
-    )
+    public async Task<ActionResult<TaskItem>> CreateTask(TaskItemCreateRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Text))
+        {
+            return BadRequest("Task text is required.");
+        }
+
+        var task = new TaskItem
+        {
+            Text = request.Text.Trim(),
+            Completed = request.Completed
+        };
         task.CreatedAt = DateTime.UtcNow;
 
         _context.Tasks.Add(task);
@@ -43,4 +48,48 @@ public class TasksController : ControllerBase
 
         return Ok(task);
     }
+
+    [HttpPatch("{id}/toggle")]
+    public async Task<ActionResult<TaskItem>> ToggleTask(
+        long id
+    )
+    {
+        var task = await _context.Tasks.FindAsync(id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        task.Completed = !task.Completed;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(task);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteTask(
+        long id
+    )
+    {
+        var task = await _context.Tasks.FindAsync(id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        _context.Tasks.Remove(task);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+}
+
+public class TaskItemCreateRequest
+{
+    public string Text { get; set; } = string.Empty;
+    public bool Completed { get; set; }
 }

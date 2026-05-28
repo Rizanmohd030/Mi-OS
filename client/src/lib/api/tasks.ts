@@ -1,12 +1,16 @@
 const API_URL =
   "http://localhost:5047/api/Tasks";
 
+export type GlobalTask = {
+  id: number;
+  text: string;
+  completed: boolean;
+  createdAt: string;
+};
+
 export async function getTasks(
-  slug: string
 ) {
-  const response = await fetch(
-    `${API_URL}/${slug}`
-  );
+  const response = await fetch(API_URL);
 
   if (!response.ok) {
     throw new Error(
@@ -14,12 +18,11 @@ export async function getTasks(
     );
   }
 
-  return response.json();
+  return response.json() as Promise<GlobalTask[]>;
 }
 
 export async function createTask(
   data: {
-    projectSlug: string;
     text: string;
     completed: boolean;
   }
@@ -44,5 +47,41 @@ export async function createTask(
     );
   }
 
-  return response.json();
+  return response.json() as Promise<GlobalTask>;
+}
+
+export async function toggleTask(
+  id: number
+) {
+  const response = await fetch(
+    `${API_URL}/${id}/toggle`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to toggle task"
+    );
+  }
+
+  return response.json() as Promise<GlobalTask>;
+}
+
+export async function deleteTask(
+  id: number
+) {
+  const response = await fetch(
+    `${API_URL}/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to delete task"
+    );
+  }
 }
