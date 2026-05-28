@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 import {
   getProjectTasks,
@@ -139,11 +140,10 @@ type TaskItem = {
 };
 
 export default function WorkspacePage({
-  params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = use(params);
+  const { slug } = useParams<{ slug: string }>();
 
   const hasHydrated =
     useHasHydrated();

@@ -24,6 +24,11 @@ export default function FinancePage() {
   const [entryAmount, setEntryAmount] = useState("");
   const [entryReason, setEntryReason] = useState("");
 
+  const parseAmount = (value: string) => {
+    const normalized = value.replace(/[$,\s]/g, "").trim();
+    return Number(normalized);
+  };
+
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -69,7 +74,7 @@ export default function FinancePage() {
     e.preventDefault();
     if (!accountName.trim() || !startingBalance.trim()) return;
 
-    const balance = Number(startingBalance);
+    const balance = parseAmount(startingBalance);
     if (!Number.isFinite(balance) || balance < 0) {
       setError("Starting balance must be a valid non-negative number.");
       return;
@@ -92,9 +97,14 @@ export default function FinancePage() {
 
   const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ledger || !entryAmount.trim()) return;
+    if (!ledger) return;
 
-    const amount = Number(entryAmount);
+    if (!entryAmount.trim()) {
+      setError("Amount is required.");
+      return;
+    }
+
+    const amount = parseAmount(entryAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
       setError("Amount must be a valid number greater than zero.");
       return;
@@ -160,6 +170,7 @@ export default function FinancePage() {
                 type="number"
                 min="0.01"
                 step="0.01"
+                inputMode="decimal"
                 required
                 value={entryAmount}
                 onChange={(e) => setEntryAmount(e.target.value)}
@@ -224,6 +235,7 @@ export default function FinancePage() {
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 required
                 value={startingBalance}
                 onChange={(e) => setStartingBalance(e.target.value)}

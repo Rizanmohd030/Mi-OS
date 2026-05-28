@@ -16,6 +16,16 @@ public class FinanceController : ControllerBase
         _context = context;
     }
 
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+    }
+
     [HttpGet("accounts")]
     public async Task<ActionResult<IEnumerable<FinanceAccountSummary>>> GetAccounts()
     {
@@ -45,13 +55,13 @@ public class FinanceController : ControllerBase
         }
 
         var startingMonth = request.StartingBalanceMonth
-            ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var account = new FinanceAccount
         {
             Name = request.Name.Trim(),
             StartingBalance = request.StartingBalance,
-            StartingBalanceMonth = startingMonth,
+            StartingBalanceMonth = EnsureUtc(startingMonth),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -152,7 +162,7 @@ public class FinanceController : ControllerBase
             Amount = request.Amount,
             Type = normalizedType,
             Reason = request.Reason?.Trim() ?? string.Empty,
-            Timestamp = request.Timestamp ?? DateTime.UtcNow
+            Timestamp = EnsureUtc(request.Timestamp ?? DateTime.UtcNow)
         };
 
         _context.FinanceTransactions.Add(transaction);
@@ -186,15 +196,11 @@ public class FinanceController : ControllerBase
 
         var incomeTotal = await _context.FinanceTransactions
             .Where(t => t.AccountId == id && t.Type == "income")
-            .Select(t => t.Amount)
-            .DefaultIfEmpty(0m)
-            .SumAsync();
+            .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
         var expenseTotal = await _context.FinanceTransactions
             .Where(t => t.AccountId == id && t.Type == "expense")
-            .Select(t => t.Amount)
-            .DefaultIfEmpty(0m)
-            .SumAsync();
+            .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
         var ledgerTransactions = await _context.FinanceTransactions
             .Where(t => t.AccountId == id)

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -16,6 +17,7 @@ import { createTask, deleteTask, getTasks, toggleTask, type GlobalTask } from "@
 
 export default function Home() {
   const hasHydrated = useHasHydrated();
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +138,10 @@ export default function Home() {
   };
 
   const sortedProjects = [...backendProjects].sort((a, b) => (a.pinned === b.pinned ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : a.pinned ? -1 : 1));
+  const handleFinanceCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/finance");
+  };
 
   if (!hasHydrated) return <DashboardLayout><div className="h-40 animate-pulse rounded-2xl bg-white/5" /></DashboardLayout>;
 
@@ -161,7 +167,7 @@ export default function Home() {
           <h2 className="mb-10 text-sm font-semibold uppercase tracking-widest text-[#333333]">Modules</h2>
           <div className="grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {sortedProjects.map((project, idx) => <ProjectCard key={project.id} project={project} colorIndex={idx} />)}
-            <Link href="/finance" className="group flex min-h-[260px] flex-col justify-between rounded-2xl border border-[#E5E4E2] bg-white/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#c4c7c7]">
+            <Link href="/finance" onClick={handleFinanceCardClick} className="group flex min-h-[260px] flex-col justify-between rounded-2xl border border-[#E5E4E2] bg-white/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#c4c7c7]">
               <div className="flex items-center justify-between"><p className="text-xs uppercase tracking-widest text-[#888888]">Finance</p><Wallet size={18} className="text-[#888888]" /></div>
               <div className="space-y-2"><p className="text-2xl font-semibold text-[#333333]">{financePreview ? formatCurrency(financePreview.currentBalance) : "Open Ledger"}</p><p className="text-xs text-[#888888]">{financePreview ? "Current balance preview" : "Track income and expenses"}</p></div>
             </Link>

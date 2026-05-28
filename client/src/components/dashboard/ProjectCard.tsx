@@ -2,6 +2,7 @@
 import { togglePinProject } from "@/lib/api/projects";
 import { Pin } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Project, useWorkspaceStore } from "@/lib/store";
 import { formatDistanceToNow, parseISO } from "date-fns";
 
@@ -20,9 +21,16 @@ const PASTEL_COLORS = [
 ];
 
 export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProps) {
+  const router = useRouter();
   
   const { title, description, slug, pinned, status, deadline } = project;
   const color = PASTEL_COLORS[colorIndex % PASTEL_COLORS.length];
+  const href = `/Workspace/${slug}`;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(href);
+  };
 
  const handlePinClick = async (
   e: React.MouseEvent
@@ -73,7 +81,8 @@ export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProp
 
   return (
     <Link
-      href={`/Workspace/${slug}`}
+      href={href}
+      onClick={handleCardClick}
       className={`
         group relative block rounded-2xl
         border-2 ${color.border}
