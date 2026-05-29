@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 type QuickTaskProps = {
   text: string;
   completed?: boolean;
   onToggle?: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 };
 
@@ -14,6 +15,7 @@ export default function QuickTask({
   text,
   completed = false,
   onToggle,
+  onEdit,
   onDelete,
 }: QuickTaskProps) {
   return (
@@ -63,20 +65,26 @@ export default function QuickTask({
         </span>
       </div>
 
-      {onDelete && (
-        <button
-          onClick={onDelete}
-          className="
-            text-slate-600 hover:text-red-400
-            opacity-0 group-hover:opacity-100
-            transition-all duration-200 p-1 rounded-lg
-            hover:bg-white/[0.04] focus:opacity-100
-          "
-          title="Delete task"
-        >
-          <Trash2 size={14} />
-        </button>
-      )}
+      <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-white/[0.04] hover:text-slate-200 focus:outline-none"
+            title="Edit task"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-white/[0.04] hover:text-red-400 focus:outline-none"
+            title="Delete task"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </div>
     </motion.div>
   );
-}
+}

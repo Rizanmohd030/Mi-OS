@@ -94,3 +94,51 @@ export async function createFinanceTransaction(
 
   return response.json() as Promise<FinanceTransaction>;
 }
+
+export async function updateFinanceTransaction(
+  accountId: number,
+  transactionId: number,
+  data: {
+    amount: number;
+    type: "income" | "expense";
+    reason?: string;
+    timestamp?: string;
+  }
+) {
+  const response = await fetch(`${API_BASE}/accounts/${accountId}/transactions/${transactionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Failed to update finance transaction: ${response.status} ${details || response.statusText}`);
+  }
+
+  return response.json() as Promise<FinanceTransaction>;
+}
+
+export async function deleteFinanceTransaction(accountId: number, transactionId: number) {
+  const response = await fetch(`${API_BASE}/accounts/${accountId}/transactions/${transactionId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok && response.status !== 204) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Failed to delete finance transaction: ${response.status} ${details || response.statusText}`);
+  }
+}
+
+export async function deleteFinanceAccount(accountId: number) {
+  const response = await fetch(`${API_BASE}/accounts/${accountId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok && response.status !== 204) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Failed to delete finance account: ${response.status} ${details || response.statusText}`);
+  }
+}

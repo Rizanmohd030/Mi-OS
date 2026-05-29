@@ -86,10 +86,41 @@ public class TasksController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{id}")]
+    public async Task<ActionResult<TaskItem>> UpdateTask(long id, TaskItemUpdateRequest request)
+    {
+        var task = await _context.Tasks.FindAsync(id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Text))
+        {
+            task.Text = request.Text.Trim();
+        }
+
+        if (request.Completed.HasValue)
+        {
+            task.Completed = request.Completed.Value;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(task);
+    }
 }
 
 public class TaskItemCreateRequest
 {
     public string Text { get; set; } = string.Empty;
     public bool Completed { get; set; }
+}
+
+public class TaskItemUpdateRequest
+{
+    public string? Text { get; set; }
+    public bool? Completed { get; set; }
 }

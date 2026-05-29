@@ -98,6 +98,27 @@ public class FinanceController : ControllerBase
         });
     }
 
+    [HttpDelete("accounts/{id:long}")]
+    public async Task<IActionResult> DeleteAccount(long id)
+    {
+        var account = await _context.FinanceAccounts.FindAsync(id);
+
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        var transactions = await _context.FinanceTransactions
+            .Where(t => t.AccountId == id)
+            .ToListAsync();
+
+        _context.FinanceTransactions.RemoveRange(transactions);
+        _context.FinanceAccounts.Remove(account);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpGet("accounts/{id:long}/transactions")]
     public async Task<ActionResult<IEnumerable<FinanceTransactionDto>>> GetTransactions(
         long id,
@@ -177,6 +198,68 @@ public class FinanceController : ControllerBase
             Reason = transaction.Reason,
             Timestamp = transaction.Timestamp
         });
+    }
+
+    [HttpPut("accounts/{accountId:long}/transactions/{transactionId:long}")]
+    public async Task<ActionResult<FinanceTransactionDto>> UpdateTransaction(
+        long accountId,
+        long transactionId,
+        FinanceTransactionCreateRequest request
+    )
+    {
+        var transaction = await _context.FinanceTransactions
+            .FirstOrDefaultAsync(t => t.Id == transactionId && t.AccountId == accountId);
+
+        if (transaction == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedType = request.Type?.Trim().ToLowerInvariant();
+
+        if (normalizedType is not ("income" or "expense"))
+        {
+            return BadRequest("Transaction type must be income or expense.");
+        }
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest("Transaction amount must be greater than zero.");
+        }
+
+        transaction.Amount = request.Amount;
+        transaction.Type = normalizedType;
+        transaction.Reason = request.Reason?.Trim() ?? string.Empty;
+        transaction.Timestamp = EnsureUtc(request.Timestamp ?? transaction.Timestamp);
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new FinanceTransactionDto
+        {
+            Id = transaction.Id,
+            AccountId = transaction.AccountId,
+            Amount = transaction.Amount,
+            Type = transaction.Type,
+            Reason = transaction.Reason,
+            Timestamp = transaction.Timestamp
+        });
+    }
+
+    [HttpDelete("accounts/{accountId:long}/transactions/{transactionId:long}")]
+    public async Task<IActionResult> DeleteTransaction(long accountId, long transactionId)
+    {
+        var transaction = await _context.FinanceTransactions
+            .FirstOrDefaultAsync(t => t.Id == transactionId && t.AccountId == accountId);
+
+        if (transaction == null)
+        {
+            return NotFound();
+        }
+
+        _context.FinanceTransactions.Remove(transaction);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
     [HttpGet("accounts/{id:long}/ledger")]

@@ -50,6 +50,35 @@ export async function createTask(
   return response.json() as Promise<GlobalTask>;
 }
 
+export async function updateTask(
+  id: number,
+  data: {
+    text?: string;
+    completed?: boolean;
+  }
+) {
+  const response = await fetch(
+    `${API_URL}/${id}`,
+    {
+      method: "PATCH",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to update task"
+    );
+  }
+
+  return response.json() as Promise<GlobalTask>;
+}
+
 export async function toggleTask(
   id: number
 ) {

@@ -8,12 +8,13 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import ProjectCard from "@/components/dashboard/ProjectCard";
+import QuickTask from "@/components/dashboard/QuickTask";
 import CalendarButton from "@/components/dashboard/CalendarButton";
 import CalendarModal from "@/components/dashboard/CalendarModal";
 import { useHasHydrated } from "@/hooks/useHasHydrated";
 import { createProject, getProjects } from "@/lib/api/projects";
 import { type FinanceLedgerResponse, getFinanceAccounts, getFinanceLedger } from "@/lib/api/finance";
-import { createTask, deleteTask, getTasks, toggleTask, type GlobalTask } from "@/lib/api/tasks";
+import { createTask, deleteTask, getTasks, toggleTask, updateTask, type GlobalTask } from "@/lib/api/tasks";
 
 export default function Home() {
   const hasHydrated = useHasHydrated();
@@ -125,6 +126,27 @@ export default function Home() {
     }
   };
 
+  const handleEditTask = async (id: number, currentText: string) => {
+    const nextText = window.prompt("Edit task", currentText);
+    if (nextText === null) return;
+
+    const text = nextText.trim();
+    if (!text) return;
+
+    let previous: GlobalTask[] = [];
+    setTasks((prev) => {
+      previous = prev;
+      return prev.map((task) => (task.id === id ? { ...task, text } : task));
+    });
+
+    try {
+      const updated = await updateTask(id, { text });
+      setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+    } catch {
+      setTasks(previous);
+    }
+  };
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjTitle.trim()) return;
@@ -159,12 +181,12 @@ export default function Home() {
 
       <DashboardLayout>
         <div className="mb-20 flex flex-col items-center justify-center">
-          <h1 className="text-center text-5xl font-semibold tracking-tight text-[#333333] sm:text-6xl">Productivity Workspace</h1>
+          <h1 className="text-center text-5xl font-semibold tracking-tight text-[#333333] sm:text-6xl">Rizan's Workspace</h1>
           <p className="mt-4 text-center text-base text-[#888888]">Digital sanctuary for organized minds</p>
         </div>
 
         <div className="mb-20">
-          <h2 className="mb-10 text-sm font-semibold uppercase tracking-widest text-[#333333]">Modules</h2>
+          <h2 className="mb-10 text-sm font-semibold uppercase tracking-widest text-[#333333]">Projects</h2>
           <div className="grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {sortedProjects.map((project, idx) => <ProjectCard key={project.id} project={project} colorIndex={idx} />)}
             <Link href="/finance" onClick={handleFinanceCardClick} className="group flex min-h-[260px] flex-col justify-between rounded-2xl border border-[#E5E4E2] bg-white/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#c4c7c7]">
@@ -179,11 +201,14 @@ export default function Home() {
           <h2 className="mb-8 text-sm font-semibold uppercase tracking-widest text-[#333333]">Quick Tasks</h2>
           <div className="space-y-3">
             {tasks.map((task) => (
-              <div key={task.id} className="group flex items-center gap-4 rounded-md border border-[#E5E4E2] bg-white px-4 py-3 transition-all duration-200 hover:border-[#c4c7c7]">
-                <button onClick={() => handleToggleTask(task.id)} className="h-5 w-5 rounded-sm border border-[#E5E4E2]" />
-                <span className={`flex-1 text-[15px] ${task.completed ? "text-[#888888] line-through opacity-50" : "text-[#333333]"}`}>{task.text}</span>
-                <button onClick={() => handleDeleteTask(task.id)} className="text-xs text-[#888888] opacity-0 transition-opacity group-hover:opacity-100">?</button>
-              </div>
+              <QuickTask
+                key={task.id}
+                text={task.text}
+                completed={task.completed}
+                onToggle={() => handleToggleTask(task.id)}
+                onEdit={() => handleEditTask(task.id, task.text)}
+                onDelete={() => handleDeleteTask(task.id)}
+              />
             ))}
             {!tasks.length && tasksLoading && <p className="py-4 text-sm text-[#888888]">Loading tasks...</p>}
             {!tasks.length && !tasksLoading && tasksError && <p className="py-4 text-sm text-[#888888]">{tasksError}</p>}

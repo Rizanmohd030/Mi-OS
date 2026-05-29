@@ -1,9 +1,9 @@
 "use client";
-import { togglePinProject } from "@/lib/api/projects";
-import { Pin } from "lucide-react";
+import { deleteProject, togglePinProject, updateProject } from "@/lib/api/projects";
+import { Pencil, Pin, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Project, useWorkspaceStore } from "@/lib/store";
+import { Project } from "@/lib/store";
 import { formatDistanceToNow, parseISO } from "date-fns";
 
 type ProjectCardProps = {
@@ -30,6 +30,45 @@ export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProp
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push(href);
+  };
+
+  const handleEditClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const nextTitle = window.prompt("Edit project title", title);
+    if (nextTitle === null) return;
+
+    const nextDescription = window.prompt("Edit project description", description);
+    if (nextDescription === null) return;
+
+    const trimmedTitle = nextTitle.trim();
+    if (!trimmedTitle) return;
+
+    try {
+      await updateProject(project.id, {
+        title: trimmedTitle,
+        description: nextDescription.trim(),
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDeleteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmed = window.confirm(`Delete project "${title}"?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteProject(project.id);
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
  const handlePinClick = async (
@@ -96,17 +135,33 @@ export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProp
         <h2 className="text-lg font-semibold tracking-tight">
           {title}
         </h2>
-        <button
-          onClick={handlePinClick}
-          className={`
-            rounded-full p-1.5 transition-all duration-300
-            hover:bg-white/30
-            ${pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-          `}
-          title={pinned ? "Unpin project" : "Pin project"}
-        >
-          <Pin size={14} className={pinned ? "fill-current" : ""} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handlePinClick}
+            className={`
+              rounded-full p-1.5 transition-all duration-300
+              hover:bg-white/30
+              ${pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+            `}
+            title={pinned ? "Unpin project" : "Pin project"}
+          >
+            <Pin size={14} className={pinned ? "fill-current" : ""} />
+          </button>
+          <button
+            onClick={handleEditClick}
+            className="rounded-full p-1.5 opacity-0 transition-all duration-300 hover:bg-white/30 group-hover:opacity-100"
+            title="Edit project"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={handleDeleteClick}
+            className="rounded-full p-1.5 opacity-0 transition-all duration-300 hover:bg-white/30 group-hover:opacity-100"
+            title="Delete project"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Content */}

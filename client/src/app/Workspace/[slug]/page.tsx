@@ -7,6 +7,7 @@ import {
   getProjectTasks,
   createProjectTask,
   toggleProjectTask,
+  updateProjectTask,
   deleteProjectTask,
 } from "@/lib/api/projectTasks";
 
@@ -24,7 +25,9 @@ import {
 
 import {
   Menu,
+  Pencil,
   Plus,
+  Trash2,
 } from "lucide-react";
 
 import { useHasHydrated } from "@/hooks/useHasHydrated";
@@ -37,6 +40,7 @@ type WorkspaceTaskItemProps = {
   };
 
   onToggle: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   isBusy: boolean;
 };
@@ -44,6 +48,7 @@ type WorkspaceTaskItemProps = {
 function WorkspaceTaskItem({
   task,
   onToggle,
+  onEdit,
   onDelete,
   isBusy,
 }: WorkspaceTaskItemProps) {
@@ -112,21 +117,24 @@ function WorkspaceTaskItem({
         </p>
       </div>
 
-      <button
-        onClick={onDelete}
-        disabled={isBusy}
-        className="
-          flex-shrink-0 opacity-0
-          group-hover:opacity-100
-          transition-opacity duration-200
-          text-[#888888] hover:text-red-500
-          text-xs
-          disabled:opacity-60
-        "
-        title="Delete task"
-      >
-        ✕
-      </button>
+      <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <button
+          onClick={onEdit}
+          disabled={isBusy}
+          className="rounded-md p-1.5 text-[#888888] transition-colors hover:bg-white/70 hover:text-[#333333] disabled:opacity-60"
+          title="Edit task"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={onDelete}
+          disabled={isBusy}
+          className="rounded-md p-1.5 text-[#888888] transition-colors hover:bg-white/70 hover:text-red-500 disabled:opacity-60"
+          title="Delete task"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </motion.div>
   );
 }
@@ -321,6 +329,36 @@ export default function WorkspacePage({
     }
   };
 
+  const handleEditTask = async (task: TaskItem) => {
+    const nextText = window.prompt("Edit task", task.text);
+    if (nextText === null) return;
+
+    const text = nextText.trim();
+    if (!text) return;
+
+    setActiveTaskId(task.id);
+    let previousTasks: TaskItem[] = [];
+
+    setTasks((prev) => {
+      previousTasks = prev;
+      return prev.map((item) =>
+        item.id === task.id ? { ...item, text } : item
+      );
+    });
+
+    try {
+      const updatedTask = await updateProjectTask(task.id, { text });
+      setTasks((prev) =>
+        prev.map((item) => (item.id === task.id ? updatedTask : item))
+      );
+    } catch (error) {
+      console.error(error);
+      setTasks(previousTasks);
+    } finally {
+      setActiveTaskId(null);
+    }
+  };
+
   return (
     <div className="relative h-screen bg-[#faf9f9] text-[#333333] overflow-hidden">
       {/* SIDEBAR */}
@@ -503,6 +541,9 @@ export default function WorkspacePage({
                     handleToggleTask(
                       task.id
                     )
+                  }
+                  onEdit={() =>
+                    handleEditTask(task)
                   }
                   onDelete={() =>
                     handleDeleteTask(

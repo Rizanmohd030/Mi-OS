@@ -68,4 +68,61 @@ public class ProjectsController : ControllerBase
 
         return Ok(project);
     }
+
+    [HttpPatch("{id:long}")]
+    public async Task<ActionResult<Project>> UpdateProject(long id, ProjectUpdateRequest request)
+    {
+        var project = await _context.Projects.FindAsync(id);
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Title))
+        {
+            project.Title = request.Title.Trim();
+        }
+
+        if (request.Description != null)
+        {
+            project.Description = request.Description.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            project.Status = request.Status.Trim();
+        }
+
+        if (request.Pinned.HasValue)
+        {
+            project.Pinned = request.Pinned.Value;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(project);
+    }
+
+    [HttpDelete("{id:long}")]
+    public async Task<ActionResult> DeleteProject(long id)
+    {
+        var project = await _context.Projects.FindAsync(id);
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+}
+
+public class ProjectUpdateRequest
+{
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? Status { get; set; }
+    public bool? Pinned { get; set; }
 }

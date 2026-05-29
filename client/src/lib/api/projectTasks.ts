@@ -53,6 +53,28 @@ export async function toggleProjectTask(id: number) {
   return response.json() as Promise<ProjectTask>;
 }
 
+export async function updateProjectTask(
+  id: number,
+  data: {
+    text?: string;
+    completed?: boolean;
+  }
+) {
+  const response = await fetch(`${PROJECT_TASKS_API_URL}/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update project task");
+  }
+
+  return response.json() as Promise<ProjectTask>;
+}
+
 export async function deleteProjectTask(id: number) {
   const response = await fetch(`${PROJECT_TASKS_API_URL}/${id}`, {
     method: "DELETE",

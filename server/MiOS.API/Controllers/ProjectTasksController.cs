@@ -92,10 +92,40 @@ public class ProjectTasksController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("api/project-tasks/{id:long}")]
+    public async Task<ActionResult<ProjectTask>> UpdateProjectTask(long id, ProjectTaskUpdateRequest request)
+    {
+        var task = await _context.ProjectTasks.FindAsync(id);
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Text))
+        {
+            task.Text = request.Text.Trim();
+        }
+
+        if (request.Completed.HasValue)
+        {
+            task.Completed = request.Completed.Value;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(task);
+    }
 }
 
 public class ProjectTaskCreateRequest
 {
     public string Text { get; set; } = string.Empty;
     public bool Completed { get; set; }
+}
+
+public class ProjectTaskUpdateRequest
+{
+    public string? Text { get; set; }
+    public bool? Completed { get; set; }
 }
