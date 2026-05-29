@@ -83,6 +83,24 @@ export default function Home() {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
 
+  const formatTaskDate = (value: string) =>
+    new Date(value).toLocaleDateString("en-IN", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+
+  const groupedTasks = tasks.reduce<Record<string, GlobalTask[]>>((groups, task) => {
+    const dateKey = new Date(task.createdAt).toISOString().slice(0, 10);
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(task);
+    return groups;
+  }, {});
+
+  const taskDates = Object.keys(groupedTasks).sort((a, b) => b.localeCompare(a));
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskText.trim()) return;
@@ -199,16 +217,27 @@ export default function Home() {
 
         <div className="mt-20">
           <h2 className="mb-8 text-sm font-semibold uppercase tracking-widest text-[#333333]">Quick Tasks</h2>
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <QuickTask
-                key={task.id}
-                text={task.text}
-                completed={task.completed}
-                onToggle={() => handleToggleTask(task.id)}
-                onEdit={() => handleEditTask(task.id, task.text)}
-                onDelete={() => handleDeleteTask(task.id)}
-              />
+          <div className="space-y-6">
+            {taskDates.map((dateKey) => (
+              <div key={dateKey} className="space-y-3">
+                <div className="flex items-center justify-between border-b border-[#E5E4E2] pb-2 text-[11px] uppercase tracking-[0.25em] text-[#888888]">
+                  <span>{formatTaskDate(`${dateKey}T00:00:00`)}</span>
+                  <span>{groupedTasks[dateKey].length} task{groupedTasks[dateKey].length === 1 ? "" : "s"}</span>
+                </div>
+
+                <div className="space-y-3">
+                  {groupedTasks[dateKey].map((task) => (
+                    <QuickTask
+                      key={task.id}
+                      text={task.text}
+                      completed={task.completed}
+                      onToggle={() => handleToggleTask(task.id)}
+                      onEdit={() => handleEditTask(task.id, task.text)}
+                      onDelete={() => handleDeleteTask(task.id)}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
             {!tasks.length && tasksLoading && <p className="py-4 text-sm text-[#888888]">Loading tasks...</p>}
             {!tasks.length && !tasksLoading && tasksError && <p className="py-4 text-sm text-[#888888]">{tasksError}</p>}

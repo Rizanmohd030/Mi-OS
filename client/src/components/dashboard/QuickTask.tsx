@@ -56,7 +56,7 @@ export default function QuickTask({
             text-sm tracking-wide cursor-pointer transition-all duration-300 select-none
             ${
               completed
-                ? "text-slate-600 line-through font-light"
+                ? "text-slate-600 line-through decoration-slate-500 decoration-1 font-light"
                 : "text-slate-300 font-light hover:text-slate-200"
             }
           `}
