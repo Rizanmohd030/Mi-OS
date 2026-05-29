@@ -64,7 +64,7 @@ function WorkspaceTaskItem({
         y: 0,
       }}
       className="
-        group flex items-center justify-between
+        group flex items-start justify-between gap-4
         border-b border-[#E5E4E2]
         bg-[#faf9f9]
         px-6 py-4
@@ -72,7 +72,7 @@ function WorkspaceTaskItem({
         hover:bg-[#f1f0ed]
       "
     >
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-4">
         <button
           onClick={onToggle}
           disabled={isBusy}
@@ -105,10 +105,10 @@ function WorkspaceTaskItem({
 
         <p
           className={`
-            text-[15px] transition-all duration-200
+            flex-1 min-w-0 cursor-text whitespace-normal break-words text-[15px] leading-relaxed select-text transition-all duration-200
             ${
               task.completed
-                ? "text-[#888888] line-through opacity-50"
+                ? "text-[#333333] line-through opacity-75"
                 : "text-[#333333]"
             }
           `}
@@ -117,7 +117,7 @@ function WorkspaceTaskItem({
         </p>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         <button
           onClick={onEdit}
           disabled={isBusy}

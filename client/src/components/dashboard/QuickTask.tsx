@@ -24,9 +24,9 @@ export default function QuickTask({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="group flex items-center justify-between py-3.5 border-b border-white/[0.02]"
+      className="group flex items-start justify-between gap-4 py-3.5 border-b border-white/[0.02]"
     >
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex flex-1 min-w-0 items-start gap-4">
         <button
           onClick={onToggle}
           className={`
@@ -53,11 +53,11 @@ export default function QuickTask({
         <span
           onClick={onToggle}
           className={`
-            text-sm tracking-wide cursor-pointer transition-all duration-300 select-none
+            flex-1 min-w-0 cursor-text text-sm tracking-wide leading-relaxed transition-all duration-300 select-text whitespace-normal break-words
             ${
               completed
-                ? "text-slate-600 line-through decoration-slate-500 decoration-1 font-light"
-                : "text-slate-300 font-light hover:text-slate-200"
+                ? "text-slate-800 line-through decoration-slate-500 decoration-1 font-light"
+                : "text-slate-900 font-light hover:text-slate-700"
             }
           `}
         >
@@ -65,7 +65,7 @@ export default function QuickTask({
         </span>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
         {onEdit && (
           <button
             onClick={onEdit}
