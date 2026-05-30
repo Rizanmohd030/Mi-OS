@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, Menu, X } from "lucide-react";
 
 import { createProjectTask, deleteProjectTask, toggleProjectTask, updateProjectTask, type ProjectTask } from "@/lib/api/projectTasks";
 import { togglePinProject } from "@/lib/api/projects";
@@ -110,6 +110,8 @@ export default function WorkspaceClient({
   tasks: initialTasks,
 }: WorkspaceClientProps) {
   const router = useRouter();
+  const [viewState, setViewState] = useState<"tasks" | "calendar" | "files" | "settings">("tasks");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<{ bg?: string; text?: string }>({});
   const [colorKey, setColorKey] = useState<string | undefined>(undefined);
   const [newTaskText, setNewTaskText] = useState("");
@@ -302,9 +304,26 @@ export default function WorkspaceClient({
     className="relative h-screen overflow-hidden"
     style={topStyle}
   >
+    {/* Mobile Header (Visible only on <lg) */}
+    <div className="lg:hidden flex items-center justify-between px-4 py-4 border-b border-black/10 absolute top-0 left-0 right-0 z-40 bg-white/5 backdrop-blur-md">
+      <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-current opacity-70 hover:opacity-100">
+        <Menu size={20} />
+      </button>
+      <span className="font-semibold text-sm opacity-80 truncate px-4">{project.title}</span>
+      <div className="w-9" />
+    </div>
+
+    {/* Sidebar Overlay for Mobile */}
+    {sidebarOpen && (
+      <div 
+        className="fixed inset-0 bg-black/60 z-[60] lg:hidden"
+        onClick={() => setSidebarOpen(false)}
+      />
+    )}
+
     {/* Sidebar */}
     <motion.aside
-      className="fixed left-0 top-0 z-50 flex h-screen w-60 flex-col overflow-hidden"
+      className={`fixed left-0 top-0 z-[70] flex h-screen w-60 flex-col overflow-hidden transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       style={{
         backgroundColor: "#111111",
         backgroundImage:
@@ -312,7 +331,7 @@ export default function WorkspaceClient({
       }}
     >
       <div
-        className="flex items-center border-b border-white/10 px-5 py-5"
+        className="flex items-center justify-between border-b border-white/10 px-5 py-5"
         style={{
           backgroundColor: "rgba(0,0,0,0.2)",
         }}
@@ -324,6 +343,9 @@ export default function WorkspaceClient({
           <ArrowLeft size={16} />
           Back
         </Link>
+        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white p-1 -mr-1">
+          <X size={18} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -350,23 +372,23 @@ export default function WorkspaceClient({
     </motion.aside>
 
     {/* Main */}
-    <main className="ml-60 h-screen overflow-hidden">
+    <main className="h-screen overflow-hidden transition-all duration-300 lg:ml-60 pt-[60px] lg:pt-0">
 
       <div className="h-full overflow-y-auto">
 
         <div className="min-h-full">
 
           {/* Header Area */}
-          <div className="px-10 pt-14 pb-12">
+          <div className="px-4 sm:px-10 pt-6 sm:pt-14 pb-8 sm:pb-12">
 
-            <div className="flex items-start justify-between gap-16">
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 lg:gap-16">
 
               {/* Left */}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 w-full lg:flex-1">
 
                 <h1
-  className="text-6xl font-black tracking-[-0.06em]"
-  style={{
+                  className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.06em] leading-[1.1]"
+                  style={{
     color:
       colorKey === "white"
         ? "#111111"
@@ -399,7 +421,7 @@ export default function WorkspaceClient({
               </div>
 
               {/* Right */}
-              <div className="w-full max-w-sm pt-2">
+              <div className="w-full lg:max-w-sm lg:pt-2">
                 <p className="text-sm font-light leading-relaxed text-black/65">
                   {project.description ||
                     "No description provided."}
@@ -410,7 +432,7 @@ export default function WorkspaceClient({
           </div>
 
           {/* Tasks */}
-          <div className="px-10 pb-14">
+          <div className="px-4 sm:px-10 pb-14">
 
             <div className="space-y-10">
 

@@ -454,7 +454,7 @@ export default function HomeClient({
     <>
       <DashboardLayout>
         {/* HERO */}
-        <section className="relative -mt-4 overflow-hidden bg-[#0f0f0f] px-8 pt-16 pb-14 sm:px-10 lg:px-16 xl:px-24">
+        <section className="relative -mt-4 overflow-hidden bg-[#0f0f0f] px-4 sm:px-8 lg:px-16 xl:px-24 pt-16 pb-10 sm:pb-14">
           <div
             className="pointer-events-none absolute inset-0 opacity-60"
             style={{
@@ -467,8 +467,8 @@ export default function HomeClient({
           <MiOSMenu />
 
           <div className="relative z-10 mx-auto max-w-7xl">
-            <div className="mb-20 flex flex-col items-center justify-center">
-              <h1 className="max-w-5xl py-14 text-center text-5xl font-black uppercase leading-[0.9] tracking-[-0.07em] text-[#F5F3EF] sm:text-6xl lg:text-[5.5rem]">
+            <div className="mb-14 sm:mb-20 flex flex-col items-center justify-center">
+              <h1 className="max-w-5xl py-10 sm:py-14 text-center text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] font-black uppercase leading-[0.9] tracking-[-0.07em] text-[#F5F3EF]">
                 Rizan's
                 <br />
                 Workspace

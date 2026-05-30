@@ -63,7 +63,7 @@ export default function UnlockClient({
 
   return (
     <main
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-6"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 sm:px-6"
       style={{ backgroundColor: "#2e2e2e" }}
     >
       {/* Grid overlay — matches the photo's dark tile pattern */}
