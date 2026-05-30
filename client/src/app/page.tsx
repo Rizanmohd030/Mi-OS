@@ -1,24 +1,14 @@
-import HomeClient from "./HomeClient";
-import { getProjects } from "@/lib/api/projects";
-import { getTasks } from "@/lib/api/tasks";
-import { getFinanceAccounts, getFinanceLedger } from "@/lib/api/finance";
+"use client";
 
-export default async function Home() {
-  const [initialProjects, initialTasks, initialFinancePreview] = await Promise.all([
-    getProjects().catch(() => []),
-    getTasks().catch(() => []),
-    (async () => {
-      const accounts = await getFinanceAccounts().catch(() => []);
-      if (!accounts.length) return null;
-      return getFinanceLedger(accounts[0].id, 2).catch(() => null);
-    })(),
-  ]);
+import dynamic from "next/dynamic";
 
-  return (
-    <HomeClient
-      initialProjects={initialProjects}
-      initialTasks={initialTasks}
-      initialFinancePreview={initialFinancePreview}
-    />
-  );
+const UnlockClient = dynamic(() => import("./unlock/UnlockClient"), {
+  ssr: false,
+  loading: () => (
+    <main className="min-h-screen bg-[#050505]" />
+  ),
+});
+
+export default function Home() {
+  return <UnlockClient nextPath="/Workspace" />;
 }
