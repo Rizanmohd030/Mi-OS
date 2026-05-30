@@ -17,7 +17,8 @@ export async function createProject(data: {
   description: string;
   status: string;
   pinned: boolean;
-  slug:string;
+  slug: string;
+  color?: string;
 }) {
   const response = await fetch(API_URL, {
     method: "POST",

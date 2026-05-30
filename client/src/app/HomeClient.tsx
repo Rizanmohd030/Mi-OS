@@ -30,6 +30,35 @@ import {
   type GlobalTask,
 } from "@/lib/api/tasks";
 
+const PROJECT_COLOR_KEY = "mi-os-project-colors";
+
+const PROJECT_COLOR_OPTIONS = [
+  { value: "white", swatch: "#E9E1D7" },
+  { value: "black", swatch: "#111111" },
+  { value: "purple", swatch: "#BF40BF" },
+  { value: "orange", swatch: "#FFAA00" },
+] as const;
+
+type ProjectColorChoice = (typeof PROJECT_COLOR_OPTIONS)[number]["value"];
+
+const readStoredProjectColors = (): Record<string, ProjectColorChoice> => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(localStorage.getItem(PROJECT_COLOR_KEY) || "{}") as Record<string, ProjectColorChoice>;
+  } catch {
+    return {};
+  }
+};
+
+const writeStoredProjectColors = (slug: string, color: ProjectColorChoice) => {
+  if (typeof window === "undefined") return;
+
+  const current = readStoredProjectColors();
+  current[slug] = color;
+  localStorage.setItem(PROJECT_COLOR_KEY, JSON.stringify(current));
+};
+
 type HomeClientProps = {
   initialProjects: any[];
   initialTasks: GlobalTask[];
@@ -50,6 +79,7 @@ export default function HomeClient({
   const [newTaskText, setNewTaskText] = useState("");
   const [newProjTitle, setNewProjTitle] = useState("");
   const [newProjDesc, setNewProjDesc] = useState("");
+  const [newProjColor, setNewProjColor] = useState<ProjectColorChoice>("white");
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
@@ -84,7 +114,14 @@ export default function HomeClient({
   React.useEffect(() => {
     (async () => {
       try {
-        setBackendProjects(await getProjects());
+        const storedColors = readStoredProjectColors();
+        const projects = await getProjects();
+        setBackendProjects(
+          projects.map((project: any) => ({
+            ...project,
+            color: storedColors[project.slug] || project.color || undefined,
+          }))
+        );
       } catch (error) {
         console.error("Failed to fetch projects:", error);
       }
@@ -275,12 +312,22 @@ export default function HomeClient({
       description: newProjDesc.trim() || "No description provided.",
       status: "current",
       pinned: false,
+      color: newProjColor,
     });
 
-    setBackendProjects((prev) => [created, ...prev]);
+    writeStoredProjectColors(created.slug, newProjColor);
+
+    setBackendProjects((prev) => [
+      {
+        ...created,
+        color: newProjColor,
+      },
+      ...prev,
+    ]);
 
     setNewProjTitle("");
     setNewProjDesc("");
+    setNewProjColor("white");
 
     setIsAddProjectOpen(false);
   };
@@ -475,96 +522,120 @@ export default function HomeClient({
         onClose={() => setIsCalendarOpen(false)}
       />
       <AnimatePresence>
-  {isAddProjectOpen && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => setIsAddProjectOpen(false)}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-      />
-
-      {/* modal */}
-      <motion.div
-        initial={{
-          opacity: 0,
-          scale: 0.96,
-          y: 18,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-          y: 0,
-        }}
-        exit={{
-          opacity: 0,
-          scale: 0.96,
-          y: 18,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 260,
-          damping: 22,
-        }}
-        className="relative z-10 w-full max-w-md border border-[#D6D3CE] bg-[#F7F3EE] p-7 shadow-2xl"
-      >
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.32em] text-[#7b7771]">
-            Create Project
-          </p>
-        </div>
-
-        <form onSubmit={handleCreateProject} className="space-y-5">
-          <div className="space-y-2">
-            <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">
-              Project Name
-            </label>
-
-            <input
-              type="text"
-              required
-              value={newProjTitle}
-              onChange={(e) => setNewProjTitle(e.target.value)}
-              className="w-full border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">
-              Description
-            </label>
-
-            <textarea
-              rows={4}
-              value={newProjDesc}
-              onChange={(e) => setNewProjDesc(e.target.value)}
-              className="w-full resize-none border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <button
-              type="button"
+        {isAddProjectOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setIsAddProjectOpen(false)}
-              className="border border-[#D6D3CE] px-5 py-2 text-xs uppercase tracking-[0.2em] text-[#55514C] transition-colors hover:bg-black hover:text-white"
-            >
-              Cancel
-            </button>
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
 
-            <button
-              type="submit"
-              className="bg-black px-5 py-2 text-xs uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-80"
+            <motion.div
+              initial={{
+                opacity: 0,
+                scale: 0.96,
+                y: 18,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                y: 18,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 22,
+              }}
+              className="relative z-10 w-full max-w-md border border-[#D6D3CE] bg-[#F7F3EE] p-7 shadow-2xl"
             >
-              Create
-            </button>
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <p className="pt-1 text-xs uppercase tracking-[0.32em] text-[#7b7771]">
+                  Create Project
+                </p>
+
+                <div className="flex items-center gap-2">
+                  {PROJECT_COLOR_OPTIONS.map((option) => {
+                    const isSelected = newProjColor === option.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setNewProjColor(option.value)}
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
+                          isSelected
+                            ? "border-[#373537] ring-2 ring-[#373537]/25"
+                            : "border-[#D6D3CE]"
+                        }`}
+                        aria-label={option.value}
+                        title={option.value}
+                      >
+                        <span
+                          className="h-3.5 w-3.5 rounded-full"
+                          style={{ backgroundColor: option.swatch }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateProject} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">
+                    Project Name
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    value={newProjTitle}
+                    onChange={(e) => setNewProjTitle(e.target.value)}
+                    className="w-full border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">
+                    Description
+                  </label>
+
+                  <textarea
+                    rows={4}
+                    value={newProjDesc}
+                    onChange={(e) => setNewProjDesc(e.target.value)}
+                    className="w-full resize-none border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddProjectOpen(false)}
+                    className="border border-[#D6D3CE] px-5 py-2 text-xs uppercase tracking-[0.2em] text-[#55514C] transition-colors hover:bg-black hover:text-white"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="bg-black px-5 py-2 text-xs uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-80"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </form>
-      </motion.div>
-    </div>
-  )}
-</AnimatePresence>
+        )}
+      </AnimatePresence>
 
     </>
   );

@@ -6,6 +6,8 @@ export interface Project {
 
   slug: string;
 
+  color?: string;
+
   title: string;
 
   description: string;

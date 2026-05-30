@@ -12,18 +12,52 @@ type ProjectCardProps = {
   onPin?: (project: Project) => void | Promise<void>;
 };
 
-const PASTEL_COLORS = [
-  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
-  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
-  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
-  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
-];
+const CARD_COLOR_STYLES = {
+  white: {
+    bg: "bg-[#E9E1D7]",
+    border: "border-[#D6D3CE]",
+    header: "bg-[#EFE7DB]",
+    text: "text-[#111111]",
+    mutedText: "text-[#6B645B]",
+    bodyText: "text-[#111111]",
+  },
+  black: {
+    bg: "bg-[#111111]",
+    border: "border-white/10",
+    header: "bg-white/[0.03]",
+    text: "text-white",
+    mutedText: "text-white/70",
+    bodyText: "text-white",
+  },
+  purple: {
+    bg: "bg-[#BF40BF]",
+    border: "border-white/15",
+    header: "bg-white/10",
+    text: "text-white",
+    mutedText: "text-white/75",
+    bodyText: "text-white",
+  },
+  orange: {
+    bg: "bg-[#FFAA00]",
+    border: "border-black/10",
+    header: "bg-white/15",
+    text: "text-[#1A1A1A]",
+    mutedText: "text-[#2D2617]/75",
+    bodyText: "text-[#1A1A1A]",
+  },
+} as const;
+
+const FALLBACK_CARD_KEYS = ["white", "black", "purple", "orange"] as const;
 
 export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectCardProps) {
   const router = useRouter();
   
   const { title, description, slug, pinned, status, deadline } = project;
-  const color = PASTEL_COLORS[colorIndex % PASTEL_COLORS.length];
+  const colorKey =
+    (project.color && project.color in CARD_COLOR_STYLES
+      ? project.color
+      : FALLBACK_CARD_KEYS[colorIndex % FALLBACK_CARD_KEYS.length]) as keyof typeof CARD_COLOR_STYLES;
+  const color = CARD_COLOR_STYLES[colorKey];
   const href = `/Workspace/${slug}`;
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -138,21 +172,21 @@ export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectC
 
       {/* Content */}
       <div className="p-6 flex flex-col h-full justify-between gap-6">
-        <p className="text-sm leading-relaxed text-white font-normal line-clamp-3">
+        <p className={`text-sm leading-relaxed font-normal line-clamp-3 ${color.bodyText}`}>
           {description}
         </p>
 
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+        <div className={`flex items-center justify-between pt-4 border-t ${colorKey === "white" ? "border-[#CFC9C0]" : "border-white/10"}`}>
           <span className={`inline-block border px-2.5 py-0.5 text-xs font-medium tracking-wide ${statusStyles[status] || statusStyles.current}`}>
             {statusLabels[status] || status}
           </span>
 
           {deadline && (
             <div className="text-right">
-              <p className="text-[11px] text-white/70 font-medium uppercase tracking-wider">
+              <p className={`text-[11px] font-medium uppercase tracking-wider ${color.mutedText}`}>
                 Deadline
               </p>
-              <p className={`text-xs font-medium ${isOverdue ? "text-red-400" : "text-white/90"}`}>
+              <p className={`text-xs font-medium ${isOverdue ? "text-red-400" : colorKey === "white" || colorKey === "orange" ? "text-[#1A1A1A]" : "text-white/90"}`}>
                 {deadlineText}
               </p>
             </div>
