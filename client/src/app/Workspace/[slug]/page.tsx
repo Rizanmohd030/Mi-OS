@@ -22,6 +22,7 @@ import {
   motion,
   AnimatePresence,
 } from "framer-motion";
+import CreateProjectModal from "@/components/dashboard/CreateProjectModal";
 
 import {
   Menu,
@@ -161,6 +162,7 @@ export default function WorkspacePage({
 
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [project, setProject] =
     useState<any>(null);
@@ -498,7 +500,15 @@ export default function WorkspacePage({
             </span>
           </div>
 
-          <div className="w-10" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="rounded-full bg-[#66b7ff] hover:bg-[#4fa7f8] text-white px-3 py-2 transition-colors"
+              title="Create project"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         </div>
 
         {/* CONTENT */}
@@ -619,6 +629,15 @@ export default function WorkspacePage({
           </form>
         </div>
       </main>
+
+      <CreateProjectModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={(payload) => {
+          // temporary: log the created project; integrate API call as needed
+          console.log("Create project", payload);
+        }}
+      />
     </div>
   );
 }
