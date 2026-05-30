@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, ChevronDown, LogOut } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -71,6 +71,69 @@ type HomeClientProps = {
   initialTasks: GlobalTask[];
   initialFinancePreview: FinanceLedgerResponse | null;
 };
+
+function MiOSMenu() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleLogout() {
+    await fetch("/api/auth", { method: "DELETE" });
+    router.replace("/");
+    router.refresh();
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-0 top-0 z-50 border-b border-white/10 w-60"
+      style={{ backgroundColor: "transparent" }}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-5 text-base font-semibold tracking-tight text-white transition-colors hover:bg-white/5"
+      >
+        <span>Mi-OS</span>
+        <ChevronDown
+          size={14}
+          className="text-white/40 transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 right-0 top-full border-t border-white/10"
+            style={{ backgroundColor: "transparent" }}
+          >
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 px-5 py-3 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <LogOut size={14} />
+              <span className="tracking-wide">Logout</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function HomeClient({
   initialProjects,
@@ -400,6 +463,8 @@ export default function HomeClient({
               backgroundSize: "240px 240px",
             }}
           />
+
+          <MiOSMenu />
 
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="mb-20 flex flex-col items-center justify-center">

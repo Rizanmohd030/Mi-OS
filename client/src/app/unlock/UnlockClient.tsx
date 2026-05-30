@@ -62,77 +62,130 @@ export default function UnlockClient({
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0b0b] px-6">
-
-      {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.035),transparent_35%),radial-gradient(circle_at_bottom,rgba(255,255,255,0.02),transparent_45%)]" />
-
-      {/* Grid */}
+    <main
+      className="relative flex min-h-screen items-center justify-center overflow-hidden px-6"
+      style={{ backgroundColor: "#2e2e2e" }}
+    >
+      {/* Grid overlay — matches the photo's dark tile pattern */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.22]"
+        className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(230,230,230,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(230,230,230,0.10) 1px, transparent 1px)",
-          backgroundSize: "240px 240px",
+            "linear-gradient(to right, rgba(0,0,0,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.35) 1px, transparent 1px)",
+          backgroundSize: "120px 120px",
         }}
       />
 
-      {/* Noise texture */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.03] mix-blend-screen bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-
-      {/* Password Box */}
-      <section className="relative z-10 w-full max-w-[420px] border border-[#d8d2c8] bg-[#F5F3EF] shadow-[0_40px_120px_rgba(0,0,0,0.75)]">
-
-        {/* Header */}
-        <div className="border-b border-white/10 bg-black px-8 py-6">
-          <h1 className="text-[15px] font-semibold tracking-[0.32em] text-white">
+      {/* Password Dialog */}
+      <section
+        className="relative z-10 w-full"
+        style={{ maxWidth: "290px" }}
+      >
+        {/* Black header bar */}
+        <div
+          style={{
+            backgroundColor: "#111111",
+            padding: "14px 18px",
+          }}
+        >
+          <h1
+            style={{
+              fontFamily: "'Courier New', Courier, monospace",
+              fontSize: "13px",
+              fontWeight: "bold",
+              letterSpacing: "0.18em",
+              color: "#ffffff",
+              margin: 0,
+            }}
+          >
             PASSWORD#?
           </h1>
         </div>
 
-        {/* Body */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-8 px-8 py-8"
+        {/* Off-white body */}
+        <form onSubmit={handleSubmit}>
+        <div
+          style={{
+            backgroundColor: "#e8e5df",
+            padding: "20px 18px 18px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+          }}
         >
-
-          {/* Input Area */}
-          <div className="border border-[#d3cdc3] bg-white px-5 py-5">
+          {/* Input box */}
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #c8c3bc",
+              padding: "12px 14px",
+            }}
+          >
             <input
               type="password"
               autoFocus
               autoComplete="current-password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              placeholder="✱ ✱ ✱ ✱ ✱ ✱"
-              className="w-full bg-transparent text-[34px] tracking-[0.18em] text-black outline-none placeholder:text-[#bdb7ae]"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="* * * * * * *"
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: "22px",
+                letterSpacing: "0.35em",
+                color: "#000000",
+              }}
             />
           </div>
 
-          {/* Error */}
+          {/* Error message */}
           {error && (
-            <p className="text-xs tracking-[0.08em] text-red-500">
+            <p
+              style={{
+                margin: 0,
+                fontSize: "11px",
+                letterSpacing: "0.06em",
+                color: "#cc3333",
+                fontFamily: "'Courier New', Courier, monospace",
+              }}
+            >
               {error}
             </p>
           )}
 
-          {/* Button */}
-          <div className="flex justify-end">
+          {/* ENTER button — right-aligned */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="submit"
-              disabled={
-                !password.trim() ||
-                isSubmitting
-              }
-              className="border border-[#a8a39c] bg-[#9f9b96] px-7 py-3 text-[13px] font-semibold tracking-[0.28em] text-white transition-all duration-200 hover:bg-[#8f8b86] disabled:opacity-40"
+              disabled={!password.trim() || isSubmitting}
+              style={{
+                backgroundColor: "#707070",
+                border: "1px solid #5a5a5a",
+                color: "#ffffff",
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: "11px",
+                fontWeight: "bold",
+                letterSpacing: "0.22em",
+                padding: "8px 16px",
+                cursor: "pointer",
+                opacity: !password.trim() || isSubmitting ? 0.5 : 1,
+                transition: "background-color 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                if (!(!password.trim() || isSubmitting))
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#5a5a5a";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#707070";
+              }}
             >
-              {isSubmitting
-                ? "ENTERING"
-                : "ENTER"}
+              {isSubmitting ? "ENTERING" : "ENTER"}
             </button>
           </div>
+        </div>
         </form>
       </section>
     </main>

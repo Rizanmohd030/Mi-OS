@@ -134,7 +134,12 @@ export async function PUT() {
 }
 
 export async function DELETE() {
-  return NextResponse.json({ ok: false, error: "method_not_allowed" }, { status: 405 });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(AUTH_COOKIE_NAME, "", {
+    ...createAuthCookieOptions(),
+    maxAge: 0,
+  });
+  return response;
 }
 
 export async function PATCH() {
