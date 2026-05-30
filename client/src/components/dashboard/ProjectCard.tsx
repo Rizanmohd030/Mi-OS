@@ -9,18 +9,17 @@ import { formatDistanceToNow, parseISO } from "date-fns";
 type ProjectCardProps = {
   project: Project;
   colorIndex?: number;
+  onPin?: (project: Project) => void | Promise<void>;
 };
 
 const PASTEL_COLORS = [
-  { bg: "bg-pink-100", border: "border-pink-200", header: "bg-pink-300", text: "text-pink-900" },
-  { bg: "bg-purple-100", border: "border-purple-200", header: "bg-purple-300", text: "text-purple-900" },
-  { bg: "bg-yellow-100", border: "border-yellow-200", header: "bg-yellow-300", text: "text-yellow-900" },
-  { bg: "bg-blue-100", border: "border-blue-200", header: "bg-blue-300", text: "text-blue-900" },
-  { bg: "bg-green-100", border: "border-green-200", header: "bg-green-300", text: "text-green-900" },
-  { bg: "bg-orange-100", border: "border-orange-200", header: "bg-orange-300", text: "text-orange-900" },
+  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
+  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
+  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
+  { bg: "bg-[#0f0f0f]", border: "border-white/10", header: "bg-transparent", text: "text-white" },
 ];
 
-export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProps) {
+export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectCardProps) {
   const router = useRouter();
   
   const { title, description, slug, pinned, status, deadline } = project;
@@ -71,16 +70,17 @@ export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProp
     }
   };
 
- const handlePinClick = async (
-  e: React.MouseEvent
-) => {
+ const handlePinClick = async (e: React.MouseEvent) => {
   e.preventDefault();
   e.stopPropagation();
 
   try {
-    await togglePinProject(project.id);
+    if (onPin) {
+      await onPin(project);
+      return;
+    }
 
-    window.location.reload();
+    await togglePinProject(project.id);
   } catch (error) {
     console.error(error);
   }
@@ -122,70 +122,37 @@ export default function ProjectCard({ project, colorIndex = 0 }: ProjectCardProp
     <Link
       href={href}
       onClick={handleCardClick}
-      className={`
-        group relative block rounded-2xl
-        border-2 ${color.border}
-        ${color.bg} p-0 overflow-hidden
-        transition-all duration-300 ease-out
-        hover:shadow-lg hover:-translate-y-1
-      `}
+      className={`group relative block w-full h-full rounded-none border ${color.border} ${color.bg} p-0 overflow-hidden transition-colors duration-200 ease-out hover:border-white/20`}
     >
       {/* Header */}
       <div className={`${color.header} ${color.text} px-6 py-3 flex items-center justify-between`}>
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="text-lg font-bold tracking-tight uppercase">
           {title}
         </h2>
         <div className="flex items-center gap-1">
-          <button
-            onClick={handlePinClick}
-            className={`
-              rounded-full p-1.5 transition-all duration-300
-              hover:bg-white/30
-              ${pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-            `}
-            title={pinned ? "Unpin project" : "Pin project"}
-          >
-            <Pin size={14} className={pinned ? "fill-current" : ""} />
-          </button>
-          <button
-            onClick={handleEditClick}
-            className="rounded-full p-1.5 opacity-0 transition-all duration-300 hover:bg-white/30 group-hover:opacity-100"
-            title="Edit project"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={handleDeleteClick}
-            className="rounded-full p-1.5 opacity-0 transition-all duration-300 hover:bg-white/30 group-hover:opacity-100"
-            title="Delete project"
-          >
-            <Trash2 size={14} />
-          </button>
+          <button onClick={handlePinClick} className={`p-1 transition-opacity duration-200 ${pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} title={pinned ? "Unpin project" : "Pin project"}><Pin size={14} /></button>
+          <button onClick={handleEditClick} className="p-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100" title="Edit project"><Pencil size={14} /></button>
+          <button onClick={handleDeleteClick} className="p-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100" title="Delete project"><Trash2 size={14} /></button>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-6 flex flex-col h-full justify-between gap-6">
-        <p className="text-sm leading-relaxed text-gray-700 font-light line-clamp-3">
+        <p className="text-sm leading-relaxed text-white font-normal line-clamp-3">
           {description}
         </p>
 
-        <div className="flex items-center justify-between pt-4 border-t border-black/10">
-          <span
-            className={`
-              rounded-full border px-2.5 py-0.5 text-xs font-light tracking-wide
-              ${statusStyles[status] || statusStyles.current}
-            `}
-          >
+        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+          <span className={`inline-block border px-2.5 py-0.5 text-xs font-medium tracking-wide ${statusStyles[status] || statusStyles.current}`}>
             {statusLabels[status] || status}
           </span>
 
           {deadline && (
             <div className="text-right">
-              <p className="text-[11px] text-gray-600 font-light uppercase tracking-wider">
+              <p className="text-[11px] text-white/70 font-medium uppercase tracking-wider">
                 Deadline
               </p>
-              <p className={`text-xs font-light ${isOverdue ? "text-red-600" : "text-gray-700"}`}>
+              <p className={`text-xs font-medium ${isOverdue ? "text-red-400" : "text-white/90"}`}>
                 {deadlineText}
               </p>
             </div>

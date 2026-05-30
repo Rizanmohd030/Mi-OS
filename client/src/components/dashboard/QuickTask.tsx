@@ -51,7 +51,6 @@ export default function QuickTask({
         </button>
 
         <span
-          onClick={onToggle}
           className={`
             flex-1 min-w-0 cursor-text text-sm tracking-wide leading-relaxed transition-all duration-300 select-text whitespace-normal break-words
             ${
