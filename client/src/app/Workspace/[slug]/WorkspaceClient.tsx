@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { createProjectTask, deleteProjectTask, toggleProjectTask, updateProjectTask, type ProjectTask } from "@/lib/api/projectTasks";
 import { togglePinProject } from "@/lib/api/projects";
+import QuickTask from "@/components/dashboard/QuickTask";
 
 type WorkspaceProject = {
   id: number;
@@ -26,79 +27,112 @@ type WorkspaceClientProps = {
   tasks: ProjectTask[];
 };
 
-type WorkspaceTaskItemProps = {
-  task: ProjectTask;
-  onToggle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  isBusy: boolean;
+type WorkspaceTheme = {
+  base: string;
+  surface: string;
+  surfaceSoft: string;
+  surfaceMuted: string;
+  text: string;
+  textSoft: string;
+  textMuted: string;
+  accent: string;
+  line: string;
+  lineSoft: string;
 };
 
-function WorkspaceTaskItem({ task, onToggle, onEdit, onDelete, isBusy }: WorkspaceTaskItemProps) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group flex items-start justify-between gap-4 border-b border-[#E5E4E2] bg-[#faf9f9] px-6 py-4 transition-all duration-200 hover:bg-[#f1f0ed]"
-    >
-      <div className="flex min-w-0 flex-1 items-start gap-4">
-        <button
-          onClick={onToggle}
-          disabled={isBusy}
-          className="transition-all duration-200 rounded-sm flex items-center justify-center w-5 h-5 disabled:opacity-60"
-        >
-          {task.completed ? (
-            <div className="w-5 h-5 bg-[#333333] rounded-sm flex items-center justify-center border border-[#333333]">
-              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-          ) : (
-            <div className="w-5 h-5 rounded-sm border border-[#E5E4E2] hover:border-[#c4c7c7]" />
-          )}
-        </button>
+const createWorkspaceTheme = (key?: string): WorkspaceTheme => {
+  switch (key) {
+    case "purple":
+      return {
+        base: "#F7F4EE",
+        surface: "#FFFFFF",
+        surfaceSoft: "#FBF8F4",
+        surfaceMuted: "#F7F4EE",
+        text: "#111111",
+        textSoft: "#111111",
+        textMuted: "#111111",
+        accent: "#BF40BF",
+        line: "rgba(191, 64, 191, 0.28)",
+        lineSoft: "rgba(191, 64, 191, 0.12)",
+      };
+    case "orange":
+      return {
+        base: "#F7F4EE",
+        surface: "#FFFFFF",
+        surfaceSoft: "#FBF8F4",
+        surfaceMuted: "#F7F4EE",
+        text: "#111111",
+        textSoft: "#111111",
+        textMuted: "#111111",
+        accent: "#FFAA00",
+        line: "rgba(255, 170, 0, 0.28)",
+        lineSoft: "rgba(255, 170, 0, 0.12)",
+      };
+    case "black":
+      return {
+        base: "#F7F4EE",
+        surface: "#FFFFFF",
+        surfaceSoft: "#FBF8F4",
+        surfaceMuted: "#F7F4EE",
+        text: "#111111",
+        textSoft: "#111111",
+        textMuted: "#111111",
+        accent: "#111111",
+        line: "rgba(156, 156, 156, 0.30)",
+        lineSoft: "rgba(156, 156, 156, 0.14)",
+      };
+    case "white":
+    default:
+      return {
+        base: "#F7F4EE",
+        surface: "#FFFFFF",
+        surfaceSoft: "#FBF8F4",
+        surfaceMuted: "#F7F4EE",
+        text: "#111111",
+        textSoft: "#111111",
+        textMuted: "#111111",
+        accent: "#E9E1D7",
+        line: "rgba(214, 211, 206, 0.26)",
+        lineSoft: "rgba(214, 211, 206, 0.12)",
+      };
+  }
+};
 
-        <p className={`flex-1 min-w-0 cursor-text whitespace-normal break-words text-[15px] leading-relaxed select-text transition-all duration-200 ${task.completed ? "text-[#333333] line-through opacity-75" : "text-[#333333]"}`}>
-          {task.text}
-        </p>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-        <button
-          onClick={onEdit}
-          disabled={isBusy}
-          className="rounded-md p-1.5 text-[#888888] transition-colors hover:bg-white/70 hover:text-[#333333] disabled:opacity-60"
-          title="Edit task"
-        >
-          <Pencil size={14} />
-        </button>
-        <button
-          onClick={onDelete}
-          disabled={isBusy}
-          className="rounded-md p-1.5 text-[#888888] transition-colors hover:bg-white/70 hover:text-red-500 disabled:opacity-60"
-          title="Delete task"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function WorkspaceClient({ slug, project, projects, tasks: initialTasks }: WorkspaceClientProps) {
+export default function WorkspaceClient({
+  slug,
+  project,
+  projects,
+  tasks: initialTasks,
+}: WorkspaceClientProps) {
   const router = useRouter();
+  const [theme, setTheme] = useState<{ bg?: string; text?: string }>({});
+  const [colorKey, setColorKey] = useState<string | undefined>(undefined);
   const [newTaskText, setNewTaskText] = useState("");
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
 
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const formatTaskDate = (value: string) =>
+    new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(value));
+
+  const groupedTasks = tasks.reduce<Record<string, ProjectTask[]>>((groups, task) => {
+    const dateKey = new Date(task.createdAt).toISOString().slice(0, 10);
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+
+    groups[dateKey].push(task);
+
+    return groups;
+  }, {});
+
+  const taskDates = Object.keys(groupedTasks).sort((a, b) => b.localeCompare(a));
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,11 +235,58 @@ export default function WorkspaceClient({ slug, project, projects, tasks: initia
     router.refresh();
   };
 
+  // Apply project theme: check active project key first, then stored project colors mapping
+  useEffect(() => {
+    try {
+      const rawActive = localStorage.getItem("mi-os-active-project");
+      if (rawActive) {
+        const parsed = JSON.parse(rawActive) as { slug?: string; color?: string } | null;
+        if (parsed && parsed.slug === slug && parsed.color) {
+          const color = parsed.color;
+          setColorKey(color);
+          if (color === "black") setTheme({ bg: "#111111", text: "#FFFFFF" });
+          else if (color === "white") setTheme({ bg: "#E9E1D7", text: "#111111" });
+          else if (color === "purple") setTheme({ bg: "#BF40BF", text: "#111111" });
+          else if (color === "orange") setTheme({ bg: "#FFAA00", text: "#111111" });
+          return;
+        }
+      }
+
+      const stored = localStorage.getItem("mi-os-project-colors");
+      if (stored) {
+        const map = JSON.parse(stored || "{}") as Record<string, string>;
+        const key = map[slug];
+        if (key) {
+          setColorKey(key);
+          if (key === "black") setTheme({ bg: "#111111", text: "#FFFFFF" });
+          else if (key === "white") setTheme({ bg: "#E9E1D7", text: "#111111" });
+          else if (key === "purple") setTheme({ bg: "#BF40BF", text: "#111111" });
+          else if (key === "orange") setTheme({ bg: "#FFAA00", text: "#111111" });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [slug]);
+
+  const workspaceTheme = createWorkspaceTheme(colorKey);
+
+  const topStyle: React.CSSProperties = {};
+  if (workspaceTheme.base) topStyle.backgroundColor = workspaceTheme.base;
+  topStyle.backgroundRepeat = "no-repeat";
+  topStyle.backgroundSize = "cover";
+  topStyle.backgroundAttachment = "fixed";
+  topStyle.color = "#111111";
+
   return (
-    <div className="relative h-screen bg-background text-foreground overflow-hidden">
-      <motion.aside className="fixed left-0 top-0 h-screen w-60 flex flex-col border-r border-[#E5E4E2] bg-[#f1f0ed] overflow-hidden z-50 shadow-lg">
-        <div className="px-4 py-5 border-b border-[#E5E4E2] flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-base font-semibold text-[#333333] hover:text-[#88BDF2] transition-colors tracking-tight">
+    <div className="relative h-screen overflow-hidden" style={topStyle}>
+      <motion.aside className="fixed left-0 top-0 h-screen w-56 flex flex-col overflow-hidden z-50 shadow-lg" style={{
+        backgroundColor: "#111111",
+        backgroundImage:
+          "repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 34px)",
+      }}>
+        <div className="px-4 py-5 border-b border-white/10 flex items-center justify-between" style={{ backgroundColor: "rgba(0,0,0,0.2)" }}>
+          <Link href="/" className="flex items-center gap-2 text-base font-semibold text-white transition-colors tracking-tight">
             Mi-OS
           </Link>
         </div>
@@ -218,7 +299,7 @@ export default function WorkspaceClient({ slug, project, projects, tasks: initia
                 <Link
                   key={item.slug}
                   href={`/Workspace/${item.slug}`}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200 ${active ? "bg-[#d8e2ff]/40 text-[#88BDF2] font-medium" : "text-[#444748] hover:bg-[#E5E4E2]/50"}`}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200 ${active ? "bg-white/10 text-white font-medium" : "text-white/70 hover:bg-white/5 hover:text-white"}`}
                 >
                   <span>{item.title}</span>
                 </Link>
@@ -228,64 +309,111 @@ export default function WorkspaceClient({ slug, project, projects, tasks: initia
         </div>
       </motion.aside>
 
-      <main className="h-screen w-full flex flex-col overflow-hidden ml-60">
-        <div className="border-b border-[#E5E4E2] px-10 py-4 flex items-center justify-between">
-          <div className="flex-1 flex justify-center">
-            <span className="text-base font-medium text-foreground uppercase tracking-wide">Mi-OS</span>
-          </div>
-          <div className="flex items-center gap-2" />
-        </div>
-
+      <main className="h-screen w-full flex flex-col overflow-hidden ml-56">
         <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full">
-            <div className="px-10 pt-12 pb-8">
-              <h1 className="text-4xl font-semibold tracking-tight text-foreground" style={{ letterSpacing: "-0.01em" }}>
-                {project.title}
-              </h1>
+         <div className="min-h-full">
+  {/* Hero Section */}
+  <div className="px-8 pt-12 pb-10">
+    <div className="flex w-full items-start gap-12">
+      
+      {/* Title Area */}
+      <div className="min-w-0 flex-1">
+        <h1 className="text-5xl font-black tracking-[-0.04em] text-black sm:text-6xl">
+          {project.title}
+        </h1>
 
-              <p className="mt-3 text-sm text-muted-foreground">{formattedDate}</p>
+        {project.deadline && (
+          <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-black/50">
+            {new Intl.DateTimeFormat("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              timeZone: "UTC",
+            }).format(new Date(project.deadline))}
+          </p>
+        )}
+      </div>
+
+      {/* Description */}
+      <div className="w-full max-w-sm pt-3">
+        <p className="text-sm font-light leading-relaxed text-black/70">
+          {project.description || "No description provided."}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Tasks Section */}
+  <div className="w-full max-w-5xl px-8 pb-10">
+    <div className="space-y-8">
+      {taskDates.length > 0 ? (
+        taskDates.map((dateKey) => (
+          <div key={dateKey} className="space-y-4">
+
+            {/* Date Header */}
+            <div className="flex items-center justify-between border-b border-black/10 pb-3 text-[11px] uppercase tracking-[0.25em] text-black/40">
+              <span>
+                {formatTaskDate(`${dateKey}T00:00:00`)}
+              </span>
+
+              <span>
+                {groupedTasks[dateKey].length} task
+                {groupedTasks[dateKey].length === 1 ? "" : "s"}
+              </span>
             </div>
 
-            <div className="px-10 mb-6 text-sm text-muted-foreground">
-              <p>{project.description}</p>
-              {project.deadline && <p className="mt-2 text-muted-foreground">Deadline: {new Date(project.deadline).toLocaleDateString()}</p>}
-            </div>
-
-            {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <WorkspaceTaskItem
+            {/* Tasks */}
+            <div className="space-y-3">
+              {groupedTasks[dateKey].map((task) => (
+                <QuickTask
                   key={task.id}
-                  task={task}
-                  isBusy={activeTaskId === task.id}
-                  onToggle={() => handleToggleTask(task.id)}
-                  onEdit={() => handleEditTask(task)}
-                  onDelete={() => handleDeleteTask(task.id)}
+                  text={task.text}
+                  completed={task.completed}
+                  onToggle={
+                    activeTaskId === task.id
+                      ? undefined
+                      : () => handleToggleTask(task.id)
+                  }
+                  onEdit={
+                    activeTaskId === task.id
+                      ? undefined
+                      : () => handleEditTask(task)
+                  }
+                  onDelete={
+                    activeTaskId === task.id
+                      ? undefined
+                      : () => handleDeleteTask(task.id)
+                  }
                 />
-              ))
-            ) : (
-              <div className="px-10 py-10 text-muted-foreground">No tasks yet</div>
-            )}
-
-            <div className="px-6">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="h-[58px] border-b border-[#E5E4E2]" />
               ))}
             </div>
           </div>
+        ))
+      ) : (
+        <div className="py-12 text-sm text-black/50">
+          No tasks yet
         </div>
+      )}
+    </div>
 
-        <div className="border-t border-[#E5E4E2] bg-[#faf9f9] px-6 py-5">
-          <form onSubmit={handleAddTask} className="flex items-center gap-4">
-            <Plus size={20} className="text-[#888888]" />
-            <input
-              type="text"
-              value={newTaskText}
-              onChange={(e) => setNewTaskText(e.target.value)}
-              placeholder={isCreatingTask ? "Adding task..." : "Add a task"}
-              disabled={isCreatingTask}
-              className="w-full bg-transparent text-[15px] text-[#333333] placeholder:text-[#c4c7c7] focus:outline-none disabled:opacity-60"
-            />
-          </form>
+    {/* Add Task */}
+    <form
+      onSubmit={handleAddTask}
+      className="mt-10 flex items-center gap-4 border-t border-black/10 pt-6"
+    >
+      <Plus size={18} className="text-black/70" />
+
+      <input
+        type="text"
+        value={newTaskText}
+        onChange={(e) => setNewTaskText(e.target.value)}
+        placeholder="Add a task..."
+        disabled={isCreatingTask}
+        className="flex-1 border-0 bg-transparent text-[15px] text-black/80 placeholder:text-black/35 focus:outline-none disabled:opacity-60"
+      />
+    </form>
+  </div>
+</div>
         </div>
       </main>
     </div>

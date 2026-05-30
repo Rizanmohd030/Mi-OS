@@ -22,5 +22,12 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   const tasks = await getProjectTasks(project.id).catch(() => []);
 
-  return <WorkspaceClient slug={slug} project={project} projects={projects} tasks={tasks} />;
+  return (
+    <WorkspaceClient
+      slug={slug}
+      project={project}
+      projects={projects}
+      tasks={tasks}
+    />
+  );
 }

@@ -3,21 +3,41 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createProject } from "@/lib/api/projects";
+
+const PROJECT_COLOR_KEY = "mi-os-project-colors";
+
+const PROJECT_COLOR_OPTIONS = [
+  { value: "white", swatch: "#E9E1D7" },
+  { value: "black", swatch: "#111111" },
+  { value: "purple", swatch: "#BF40BF" },
+  { value: "orange", swatch: "#FFAA00" },
+] as const;
+
+type ProjectColorChoice = (typeof PROJECT_COLOR_OPTIONS)[number]["value"];
+
+const writeStoredProjectColors = (slug: string, color: ProjectColorChoice) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    const current = JSON.parse(localStorage.getItem(PROJECT_COLOR_KEY) || "{}") as Record<string, ProjectColorChoice>;
+    current[slug] = color;
+    localStorage.setItem(PROJECT_COLOR_KEY, JSON.stringify(current));
+  } catch {
+    // ignore
+  }
+};
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onCreate?: (payload: { title: string; description?: string }) => void;
+  onCreated?: (created: any, color: ProjectColorChoice) => void;
 };
 
-export default function CreateProjectModal({
-  open,
-  onClose,
-  onCreate,
-}: Props) {
+export default function CreateProjectModal({ open, onClose, onCreated }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [color, setColor] = useState<ProjectColorChoice>("white");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!open) return null;
@@ -25,108 +45,127 @@ export default function CreateProjectModal({
   const handleCreate = async () => {
     if (!title.trim()) return;
     setIsSubmitting(true);
+
+    const slug = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
     try {
-      const payload = { title: title.trim(), description: description.trim() };
-      if (onCreate) await onCreate(payload as any);
-      // brief delay for nicer UX
-      await new Promise((r) => setTimeout(r, 250));
+      const created = await createProject({
+        slug,
+        title: title.trim(),
+        description: description.trim() || "No description provided.",
+        status: "current",
+        pinned: false,
+        color,
+      });
+
+      writeStoredProjectColors(created.slug, color);
+
+      if (onCreated) onCreated(created, color);
+
       setTitle("");
       setDescription("");
+      setColor("white");
       onClose();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to create project:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 8 }}
+        initial={{ opacity: 0, scale: 0.96, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", duration: 0.35 }}
-        className="relative z-10 w-full max-w-2xl rounded-2xl border-2 border-[#BDDDFC] bg-white shadow-lg create-project-modal"
+        exit={{ opacity: 0, scale: 0.96, y: 18 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="relative z-10 w-full max-w-md border border-[#D6D3CE] bg-[#F7F3EE] p-7 shadow-2xl"
       >
-        <style>{`
-          .create-project-modal {
-            color: #0f172a !important;
-          }
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <p className="pt-1 text-xs uppercase tracking-[0.32em] text-[#7b7771]">Create Project</p>
 
-          .create-project-modal input,
-          .create-project-modal textarea {
-            color: #0f172a !important;
-            -webkit-text-fill-color: #0f172a !important;
-            opacity: 1 !important;
-          }
+          <div className="flex items-center gap-2">
+            {PROJECT_COLOR_OPTIONS.map((option) => {
+              const isSelected = color === option.value;
 
-          .create-project-modal input::placeholder,
-          .create-project-modal textarea::placeholder,
-          .create-project-modal input::-webkit-input-placeholder,
-          .create-project-modal textarea::-webkit-input-placeholder,
-          .create-project-modal input::-moz-placeholder,
-          .create-project-modal textarea::-moz-placeholder,
-          .create-project-modal input:-ms-input-placeholder,
-          .create-project-modal textarea:-ms-input-placeholder {
-            color: #4b5563 !important;
-            opacity: 1 !important;
-          }
-        `}</style>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-2xl font-bold text-[#1f2937]">Create New Project</h3>
-            <button
-              onClick={onClose}
-              className="rounded-md p-1.5 text-[#6A89A7] hover:text-[#384959] hover:bg-[#BDDDFC] transition-colors"
-            >
-              <X size={18} />
-            </button>
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setColor(option.value)}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
+                    isSelected ? "border-[#373537] ring-2 ring-[#373537]/25" : "border-[#D6D3CE]"
+                  }`}
+                >
+                  <span className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: option.swatch }} />
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate();
+          }}
+          className="space-y-5"
+        >
+          <div className="space-y-2">
+            <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">Project Name</label>
+
             <input
+              type="text"
+              required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Project Name"
-              style={{ color: '#0f172a', WebkitTextFillColor: '#0f172a' }}
-              className="w-full rounded-xl border-2 border-[#D9EBFF] bg-[#FBFDFF] px-4 py-3 text-sm font-semibold text-[#0f172a] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#88BDF2]"
-            />
-
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (Optional)"
-              rows={4}
-              style={{ color: '#0f172a', WebkitTextFillColor: '#0f172a' }}
-              className="w-full rounded-xl border-2 border-[#D9EBFF] bg-[#FBFDFF] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#88BDF2] resize-none"
+              className="w-full border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
             />
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3">
+          <div className="space-y-2">
+            <label className="text-[11px] uppercase tracking-[0.25em] text-[#7b7771]">Description</label>
+
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full resize-none border border-[#D6D3CE] bg-transparent px-4 py-3 text-sm text-[#373537] outline-none transition-colors focus:border-[#99938C]"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3">
             <button
+              type="button"
               onClick={onClose}
-              className="text-sm text-[#9aa6b2] px-3 py-2 rounded-md hover:bg-[#f3f6f9] transition-colors"
+              className="border border-[#D6D3CE] px-5 py-2 text-xs uppercase tracking-[0.2em] text-[#55514C] transition-colors hover:bg-black hover:text-white"
             >
               Cancel
             </button>
 
-            <Button
-              onClick={handleCreate}
+            <button
+              type="submit"
               disabled={!title.trim() || isSubmitting}
-              className="rounded-full px-5 py-2 bg-[#66b7ff] hover:bg-[#4fa7f8] text-[#0f172a]"
+              className="bg-black px-5 py-2 text-xs uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-80"
             >
               {isSubmitting ? "Creating..." : "Create"}
-            </Button>
+            </button>
           </div>
-        </div>
+        </form>
       </motion.div>
     </div>
   );

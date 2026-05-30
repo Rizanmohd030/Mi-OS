@@ -62,6 +62,13 @@ export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectC
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    try {
+      localStorage.setItem(
+        "mi-os-active-project",
+        JSON.stringify({ slug, color: colorKey })
+      );
+    } catch {}
+
     router.push(href);
   };
 
