@@ -111,6 +111,8 @@ export default function WorkspaceClient({
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskText, setEditingTaskText] = useState("");
 
   const formatTaskDate = (value: string) =>
     new Intl.DateTimeFormat("en-US", {
@@ -204,30 +206,42 @@ export default function WorkspaceClient({
     }
   };
 
-  const handleEditTask = async (task: ProjectTask) => {
-    const nextText = window.prompt("Edit task", task.text);
-    if (nextText === null) return;
+  const handleEditTask = (task: ProjectTask) => {
+    setEditingTaskId(task.id);
+    setEditingTaskText(task.text);
+  };
 
-    const text = nextText.trim();
+  const handleSaveTaskEdit = async () => {
+    if (!editingTaskId) return;
+
+    const text = editingTaskText.trim();
     if (!text) return;
 
-    setActiveTaskId(task.id);
+    const id = editingTaskId;
+    setActiveTaskId(id);
     let previousTasks: ProjectTask[] = [];
 
     setTasks((prev) => {
       previousTasks = prev;
-      return prev.map((item) => (item.id === task.id ? { ...item, text } : item));
+      return prev.map((item) => (item.id === id ? { ...item, text } : item));
     });
 
     try {
-      const updatedTask = await updateProjectTask(task.id, { text });
-      setTasks((prev) => prev.map((item) => (item.id === task.id ? updatedTask : item)));
+      const updatedTask = await updateProjectTask(id, { text });
+      setTasks((prev) => prev.map((item) => (item.id === id ? updatedTask : item)));
+      setEditingTaskId(null);
+      setEditingTaskText("");
     } catch (error) {
       console.error(error);
       setTasks(previousTasks);
     } finally {
       setActiveTaskId(null);
     }
+  };
+
+  const handleCancelTaskEdit = () => {
+    setEditingTaskId(null);
+    setEditingTaskText("");
   };
 
   const handleTogglePin = async () => {
@@ -312,30 +326,15 @@ export default function WorkspaceClient({
       <main className="h-screen w-full flex flex-col overflow-hidden ml-56">
         <div className="flex-1 overflow-y-auto">
          <div className="min-h-full">
-  {/* Hero Section */}
-  <div className="px-8 pt-12 pb-10">
-    <div className="flex w-full items-start gap-12">
-      
-      {/* Title Area */}
-      <div className="min-w-0 flex-1">
+  <div className="px-3 pt-12 pb-10 pr-4 lg:px-3 lg:pr-6">
+    <div className="mx-auto flex w-full max-w-5xl items-start justify-center gap-8 lg:gap-10">
+      <div className="min-w-0 flex-1 text-center">
         <h1 className="text-5xl font-black tracking-[-0.04em] text-black sm:text-6xl">
           {project.title}
         </h1>
-
-        {project.deadline && (
-          <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-black/50">
-            {new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              timeZone: "UTC",
-            }).format(new Date(project.deadline))}
-          </p>
-        )}
       </div>
 
-      {/* Description */}
-      <div className="w-full max-w-sm pt-3">
+      <div className="w-full max-w-sm pt-3 text-left">
         <p className="text-sm font-light leading-relaxed text-black/70">
           {project.description || "No description provided."}
         </p>
@@ -343,14 +342,12 @@ export default function WorkspaceClient({
     </div>
   </div>
 
-  {/* Tasks Section */}
-  <div className="w-full max-w-5xl px-8 pb-10">
+  <div className="mx-auto w-full max-w-5xl px-3 pb-10 pr-4 lg:px-3 lg:pr-6">
     <div className="space-y-8">
       {taskDates.length > 0 ? (
         taskDates.map((dateKey) => (
           <div key={dateKey} className="space-y-4">
 
-            {/* Date Header */}
             <div className="flex items-center justify-between border-b border-black/10 pb-3 text-[11px] uppercase tracking-[0.25em] text-black/40">
               <span>
                 {formatTaskDate(`${dateKey}T00:00:00`)}
@@ -369,21 +366,14 @@ export default function WorkspaceClient({
                   key={task.id}
                   text={task.text}
                   completed={task.completed}
-                  onToggle={
-                    activeTaskId === task.id
-                      ? undefined
-                      : () => handleToggleTask(task.id)
-                  }
-                  onEdit={
-                    activeTaskId === task.id
-                      ? undefined
-                      : () => handleEditTask(task)
-                  }
-                  onDelete={
-                    activeTaskId === task.id
-                      ? undefined
-                      : () => handleDeleteTask(task.id)
-                  }
+                  onToggle={activeTaskId === task.id ? undefined : () => handleToggleTask(task.id)}
+                  editing={editingTaskId === task.id}
+                  editValue={editingTaskId === task.id ? editingTaskText : task.text}
+                  onEdit={activeTaskId === task.id ? undefined : () => handleEditTask(task)}
+                  onEditChange={setEditingTaskText}
+                  onEditSubmit={handleSaveTaskEdit}
+                  onEditCancel={handleCancelTaskEdit}
+                  onDelete={activeTaskId === task.id ? undefined : () => handleDeleteTask(task.id)}
                 />
               ))}
             </div>

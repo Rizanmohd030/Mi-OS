@@ -1,5 +1,5 @@
 "use client";
-import { deleteProject, togglePinProject, updateProject } from "@/lib/api/projects";
+import { togglePinProject } from "@/lib/api/projects";
 import { Pencil, Pin, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,8 @@ type ProjectCardProps = {
   project: Project;
   colorIndex?: number;
   onPin?: (project: Project) => void | Promise<void>;
+  onEdit?: (project: Project) => void;
+  onDelete?: (project: Project) => void;
 };
 
 const CARD_COLOR_STYLES = {
@@ -49,7 +51,7 @@ const CARD_COLOR_STYLES = {
 
 const FALLBACK_CARD_KEYS = ["white", "black", "purple", "orange"] as const;
 
-export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectCardProps) {
+export default function ProjectCard({ project, colorIndex = 0, onPin, onEdit, onDelete }: ProjectCardProps) {
   const router = useRouter();
   
   const { title, description, slug, pinned, status, deadline } = project;
@@ -72,43 +74,18 @@ export default function ProjectCard({ project, colorIndex = 0, onPin }: ProjectC
     router.push(href);
   };
 
-  const handleEditClick = async (e: React.MouseEvent) => {
+  const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const nextTitle = window.prompt("Edit project title", title);
-    if (nextTitle === null) return;
-
-    const nextDescription = window.prompt("Edit project description", description);
-    if (nextDescription === null) return;
-
-    const trimmedTitle = nextTitle.trim();
-    if (!trimmedTitle) return;
-
-    try {
-      await updateProject(project.id, {
-        title: trimmedTitle,
-        description: nextDescription.trim(),
-      });
-      window.location.reload();
-    } catch (error) {
-      console.error(error);
-    }
+    onEdit?.(project);
   };
 
-  const handleDeleteClick = async (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const confirmed = window.confirm(`Delete project "${title}"?`);
-    if (!confirmed) return;
-
-    try {
-      await deleteProject(project.id);
-      window.location.reload();
-    } catch (error) {
-      console.error(error);
-    }
+    onDelete?.(project);
   };
 
  const handlePinClick = async (e: React.MouseEvent) => {

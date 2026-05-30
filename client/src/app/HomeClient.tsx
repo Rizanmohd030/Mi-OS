@@ -42,6 +42,12 @@ const PROJECT_COLOR_OPTIONS = [
 
 type ProjectColorChoice = (typeof PROJECT_COLOR_OPTIONS)[number]["value"];
 
+type ProjectModalState =
+  | { mode: "create" }
+  | { mode: "edit"; project: any }
+  | { mode: "delete"; project: any }
+  | null;
+
 const readStoredProjectColors = (): Record<string, ProjectColorChoice> => {
   if (typeof window === "undefined") return {};
 
@@ -78,16 +84,16 @@ export default function HomeClient({
   const profileRef = useRef<HTMLDivElement>(null);
 
   const [newTaskText, setNewTaskText] = useState("");
-  
-
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [projectModal, setProjectModal] = useState<ProjectModalState>(null);
 
   const [backendProjects, setBackendProjects] = useState<any[]>(
     initialProjects || []
   );
 
   const [tasks, setTasks] = useState<GlobalTask[]>(initialTasks || []);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskText, setEditingTaskText] = useState("");
 
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
@@ -262,14 +268,18 @@ export default function HomeClient({
   };
 
   const handleEditTask = async (id: number, currentText: string) => {
-    const nextText = window.prompt("Edit task", currentText);
+    setEditingTaskId(id);
+    setEditingTaskText(currentText);
+  };
 
-    if (nextText === null) return;
+  const handleSaveTaskEdit = async () => {
+    if (!editingTaskId) return;
 
-    const text = nextText.trim();
+    const text = editingTaskText.trim();
 
     if (!text) return;
 
+    const id = editingTaskId;
     let previous: GlobalTask[] = [];
 
     setTasks((prev) => {
@@ -279,14 +289,19 @@ export default function HomeClient({
     });
 
     try {
-      const updated = await updateTask(id, {
-        text,
-      });
+      const updated = await updateTask(id, { text });
 
       setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+      setEditingTaskId(null);
+      setEditingTaskText("");
     } catch {
       setTasks(previous);
     }
+  };
+
+  const handleCancelTaskEdit = () => {
+    setEditingTaskId(null);
+    setEditingTaskText("");
   };
 
   
@@ -322,6 +337,46 @@ export default function HomeClient({
   const handleFinanceCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push("/finance");
+  };
+
+  const handleOpenCreateProject = () => setProjectModal({ mode: "create" });
+  const handleOpenEditProject = (project: any) => setProjectModal({ mode: "edit", project });
+  const handleOpenDeleteProject = (project: any) => setProjectModal({ mode: "delete", project });
+
+  const handleProjectCreated = (created: any, color: ProjectColorChoice) => {
+    writeStoredProjectColors(created.slug, color);
+
+    setBackendProjects((prev) => [
+      {
+        ...created,
+        color,
+      },
+      ...prev,
+    ]);
+
+    setProjectModal(null);
+  };
+
+  const handleProjectUpdated = (updated: any, color: ProjectColorChoice) => {
+    writeStoredProjectColors(updated.slug, color);
+
+    setBackendProjects((prev) =>
+      prev.map((project) =>
+        project.id === updated.id
+          ? {
+              ...project,
+              ...updated,
+              color,
+            }
+          : project
+      )
+    );
+
+    setProjectModal(null);
+  };
+
+  const handleProjectDeleted = (project: any) => {
+    setBackendProjects((prev) => prev.filter((item) => item.id !== project.id));
   };
 
   if (!hasHydrated) {
@@ -367,6 +422,8 @@ export default function HomeClient({
                     project={project}
                     colorIndex={idx}
                     onPin={handlePinProject}
+                    onEdit={handleOpenEditProject}
+                    onDelete={handleOpenDeleteProject}
                   />
                 ))}
 
@@ -399,7 +456,7 @@ export default function HomeClient({
                 </Link>
 
                 <button
-  onClick={() => setIsAddProjectOpen(true)}
+  onClick={handleOpenCreateProject}
   className="group relative flex min-h-[260px] items-center justify-center overflow-hidden border border-dashed border-white/10 bg-white/[0.03] backdrop-blur-sm transition-all duration-500 hover:border-cyan-300/25 hover:bg-white/[0.06] hover:shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
 >
   {/* glow */}
@@ -448,7 +505,12 @@ export default function HomeClient({
                         text={task.text}
                         completed={task.completed}
                         onToggle={() => handleToggleTask(task.id)}
+                        editing={editingTaskId === task.id}
+                        editValue={editingTaskId === task.id ? editingTaskText : task.text}
                         onEdit={() => handleEditTask(task.id, task.text)}
+                        onEditChange={setEditingTaskText}
+                        onEditSubmit={handleSaveTaskEdit}
+                        onEditCancel={handleCancelTaskEdit}
                         onDelete={() => handleDeleteTask(task.id)}
                       />
                     ))}
@@ -477,21 +539,13 @@ export default function HomeClient({
 
       
       <CreateProjectModal
-        open={isAddProjectOpen}
-        onClose={() => setIsAddProjectOpen(false)}
-        onCreated={(created, color) => {
-          writeStoredProjectColors(created.slug, color);
-
-          setBackendProjects((prev) => [
-            {
-              ...created,
-              color,
-            },
-            ...prev,
-          ]);
-
-          setIsAddProjectOpen(false);
-        }}
+        open={projectModal !== null}
+        mode={projectModal?.mode || "create"}
+        project={projectModal && projectModal.mode !== "create" ? projectModal.project : null}
+        onClose={() => setProjectModal(null)}
+        onCreated={handleProjectCreated}
+        onUpdated={handleProjectUpdated}
+        onDeleted={handleProjectDeleted}
       />
 
     </>
